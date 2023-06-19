@@ -31,7 +31,7 @@ if (mysqli_num_rows($result) > 0) {
 } else {
     // User is not enrolled in the course, enroll them
     $enrollQuery = "INSERT INTO student_courses (course_id, student_id. completion_status, start_date) VALUES ($courseId, $userId, 'In Progress', NOW())";
-    $enrollResult = mysqli_query($conn, $enrollQuery);
+    $enrollResult = mysqli_query($conn, $enrollQuery) or die(json_encode(array('status' => 1, 'message' => 'Error occurred during enrollment of course.'.mysqli_error($conn))));
 
     if ($enrollResult) {
         // Course enrollment successful

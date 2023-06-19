@@ -31,7 +31,7 @@ if (isset($obj['courseId']) || isset($_GET['courseId'])) {
 
         if (mysqli_num_rows($teacherResult) > 0) {
             $teacher = mysqli_fetch_assoc($teacherResult);
-            $course['teacher_name'] = $teacher['name'];
+            $course['teacher_name'] = $teacher['username'];
         }
 
         $response['course_details'] = $course;

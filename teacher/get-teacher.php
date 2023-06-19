@@ -21,7 +21,7 @@ if (isset($_GET['id'])) {
         $response['status'] = 0;
         $response['teacher'] = array(
             'id' => $teacher['id'],
-            'username' => $teacher['name'],
+            'username' => $teacher['username'],
             'email' => $teacher['email']
         );
 
