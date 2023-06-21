@@ -45,9 +45,16 @@ if (empty($email) || empty($password) || empty($fullname) || empty($username) ||
    $insertQuery = "INSERT INTO teachers (email, password, name, username, cellphone) VALUES ('$email', '$hashedPassword', '$fullname', '$username', '$cellphone')";
     $insertResult = mysqli_query($conn, $insertQuery) or die(json_encode(array('status' => 1, 'message' => 'Error occurred during registration. Please try again later.')));
     if ($insertResult) {
-      $response['status'] = 0;
-      $response['message'] = 'Registration successful.';
-    } else {
+       $query = "SELECT * FROM teachers WHERE username = '$username'";
+  $result = mysqli_query($conn, $query);
+
+  if ($result && mysqli_num_rows($result) > 0) {
+    $row = mysqli_fetch_assoc($result);
+  }
+  $response['status'] = 0;
+  $response['message'] = 'Registration successful.';
+  $response['user'] = $row;
+      } else {
       $response['status'] = 1;
       $response['message'] = 'Error occurred during registration. Please try again later.';
     }
