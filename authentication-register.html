@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LMS Register</title>
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="assets/images/logos/favicon.png"
+    />
+    <link rel="stylesheet" href="assets/css/styles.min.css" />
+    
+    <style>
+      .table{
+          position: relative;
+      }
+      .custom-loader {
+          position: absolute;
+          width:50px;
+          height:50px;
+          border-radius:50%;
+          border:8px solid;
+          border-color:#E4E4ED;
+          border-right-color: #766DF4;
+          animation:s2 1s infinite linear;
+          inset: 50%;
+          display: none;
+}
+
+.showloader{
+  display: block;
+}
+@keyframes s2 {to{transform: rotate(1turn)}}
+  </style>
+  </head>
+
+  <body>
+    <!--  Body Wrapper -->
+    <div
+      class="page-wrapper"
+      id="main-wrapper"
+      data-layout="vertical"
+      data-navbarbg="skin6"
+      data-sidebartype="full"
+      data-sidebar-position="fixed"
+      data-header-position="fixed"
+    >
+      <div
+        class="position-relative overflow-hidden radial-gradient min-vh-100 d-flex align-items-center justify-content-center"
+      >
+        <div class="d-flex align-items-center justify-content-center w-100">
+          <div class="row justify-content-center w-100">
+            <div class="col-md-8 col-lg-6 col-xxl-3">
+              <div class="card mb-0">
+                <div class="card-body">
+                  <h4 class="text-center">Learning Management System</h4>
+                  <form class="inputForms">
+                    <div class="mb-3">
+                      <label for="exampleInputtext1" class="form-label"
+                        >Name</label
+                      >
+                      <input
+                        type="text"
+                        name="name"
+                        class="form-control"
+                        id="Inputtext1"
+                        aria-describedby="textHelp"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="exampleInputEmail1" class="form-label"
+                        >Email Address</label
+                      >
+                      <input
+                        type="email"
+                        name="email"
+                        class="form-control"
+                        id="InputEmail1"
+                        aria-describedby="emailHelp"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="exampleInputEmail1" class="form-label"
+                        >Username</label
+                      >
+                      <input
+                        type="text"
+                        name="username"
+                        class="form-control"
+                        id="username"
+                        aria-describedby="username"
+                      />
+                    </div>
+                    <div class="mb-3">
+                      <label for="exampleInputEmail1" class="form-label"
+                        >Phone Number</label
+                      >
+                      <input
+                        type="number"
+                        name="phoneNumber"
+                        class="form-control"
+                        id="InputNumber"
+                        aria-describedby="emailHelp"
+                      />
+                    </div>
+                    <div class="mb-4">
+                      <label for="exampleInputPassword1" class="form-label"
+                        >Password</label
+                      >
+                      <input
+                        type="password"
+                        name="password"
+                        class="form-control"
+                        id="InputPassword1"
+                      />
+                    </div>
+                    <div class="mb-4">
+                      <label for="exampleInputPassword1" class="form-label"
+                        >Role</label
+                      >
+                      <select
+                        class="form-control"
+                        name="selectMenu"
+                        id="select"
+                      >
+                        <option value="Student">Student</option>
+                        <option value="Teacher">Teacher</option>
+                      </select>
+                    </div>
+
+                    <button
+                      class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
+                    >
+                      Sign Up
+                    </button>
+                    <div
+                      class="d-flex align-items-center justify-content-center"
+                    >
+                      <p class="fs-4 mb-0 fw-bold">Already have an Account?</p>
+                      <a class="text-primary fw-bold ms-2" href="./index.html"
+                        >Sign In</a
+                      >
+                    </div>
+                    <div class="custom-loader"></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+   
+    <script src="assets/libs/jquery/dist/jquery.min.js"></script>
+    <script src="assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+        <script src="assets/js/loader.js"></script>
+    <script src="assets/js/register.js"></script>
+  </body>
+</html>

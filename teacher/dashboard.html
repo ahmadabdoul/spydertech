@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teacher Dashboard</title>
+    <link
+      rel="shortcut icon"
+      type="image/png"
+      href="../assets/images/logos/favicon.png"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.min.css" />
+  </head>
+  <style>
+    .table {
+      position: relative;
+    }
+
+    .custom-loader {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 8px solid;
+      border-color: #e4e4ed;
+      border-right-color: #766df4;
+      animation: s2 1s infinite linear;
+      inset: 50%;
+      display: none;
+    }
+
+    .showloader {
+      display: block;
+    }
+    .b-tab {
+      padding: 20px;
+      border: 1px solid #000;
+      display: none;
+    }
+
+    .b-tab.active {
+      display: block;
+    }
+
+    .b-nav-tab {
+      display: inline-block;
+      padding: 20px;
+    }
+
+    .b-nav-tab.active {
+      color: #ff4200;
+    }
+
+    @keyframes s2 {
+      to {
+        transform: rotate(1turn);
+      }
+    }
+  </style>
+  <body>
+    <!--  Body Wrapper -->
+    <div
+      class="page-wrapper"
+      id="main-wrapper"
+      data-layout="vertical"
+      data-navbarbg="skin6"
+      data-sidebartype="full"
+      data-sidebar-position="fixed"
+      data-header-position="fixed"
+    >
+      <!-- Sidebar Start -->
+      <aside class="left-sidebar">
+        <!-- Sidebar scroll-->
+        <div>
+          <div
+            class="brand-logo d-flex align-items-center justify-content-between"
+          >
+            <a href="./index.html" class="text-nowrap logo-img">
+             <h3>LMS</h3>
+            </a>
+            <div
+              class="close-btn d-xl-none d-block sidebartoggler cursor-pointer"
+              id="sidebarCollapse"
+            >
+              <i class="ti ti-x fs-8"></i>
+            </div>
+          </div>
+          <!-- Sidebar navigation-->
+          <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+            <ul id="sidebarnav">
+              <li class="nav-small-cap">
+                <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
+                <span class="hide-menu">Home</span>
+              </li>
+              <li class="sidebar-item">
+                <a
+                  class="sidebar-link"
+                  href="../teacher/dashboard.html"
+                  aria-expanded="false"
+                >
+                  <span>
+                    <i class="ti ti-layout-dashboard"></i>
+                  </span>
+                  <span class="hide-menu">Dashboard</span>
+                </a>
+              </li>
+
+              <li class="sidebar-item">
+                <a
+                  class="sidebar-link"
+                  href="../teacher/questions.html"
+                  aria-expanded="false"
+                >
+                  <span>
+                    <i class="ti ti-article"></i>
+                  </span>
+                  <span class="hide-menu">Questions</span>
+                </a>
+              </li>
+           
+
+              <li class="sidebar-item">
+                <a
+                  class="sidebar-link"
+                  href="../teacher/profile.html"
+                  aria-expanded="false"
+                >
+                  <span>
+                    <i class="ti ti-file-description"></i>
+                  </span>
+                  <span class="hide-menu">Profile</span>
+                </a>
+              </li>
+            
+            </ul>
+            <div
+            class="unlimited-access hide-menu bg-light-primary position-relative mb-7 mt-5 rounded"
+          >
+           <div class="d-flex justify-content-center align-content-center">
+              <div class="unlimited-access-title me-3">
+                <a id="logout" class="btn btn-group-lg">Logout</a>
+              </div>
+            </div>
+          </div>
+          </nav>
+          <!-- End Sidebar navigation -->
+        </div>
+        <!-- End Sidebar scroll-->
+      </aside>
+      <!--  Sidebar End -->
+      <!--  Main wrapper -->
+      <div class="body-wrapper">
+        <!--  Header Start -->
+        <header class="app-header">
+          <nav class="navbar navbar-expand-lg navbar-light">
+            <ul class="navbar-nav">
+              <li class="nav-item d-block d-xl-none">
+                <a
+                  class="nav-link sidebartoggler nav-icon-hover"
+                  id="headerCollapse"
+                  href="javascript:void(0)"
+                >
+                  <i class="ti ti-menu-2"></i>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link nav-icon-hover" href="javascript:void(0)">
+                  <i class="ti ti-bell-ringing"></i>
+                  <div class="notification bg-primary rounded-circle"></div>
+                </a>
+              </li>
+            </ul>
+            <div
+              class="navbar-collapse justify-content-end px-0"
+              id="navbarNav"
+            >
+              <ul
+                class="navbar-nav flex-row ms-auto align-items-center justify-content-end"
+              >
+                <li class="nav-item dropdown">
+                  <a
+                    class="nav-link nav-icon-hover"
+                    href="javascript:void(0)"
+                    id="drop2"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <img
+                      src="../assets/images/profile/user-1.jpg"
+                      alt=""
+                      width="35"
+                      height="35"
+                      class="rounded-circle"
+                      id="profileimg"
+                    />
+                  </a>
+                  <div
+                    class="dropdown-menu dropdown-menu-end dropdown-menu-animate-up"
+                    aria-labelledby="drop2"
+                  >
+                    <div class="message-body">
+                      <a
+                        href="javascript:void(0)"
+                        class="d-flex align-items-center gap-2 dropdown-item"
+                      >
+                        <i class="ti ti-user fs-6"></i>
+                        <p class="mb-0 fs-3">My Profile</p>
+                      </a>
+                      <a
+                        href="javascript:void(0)"
+                        class="d-flex align-items-center gap-2 dropdown-item"
+                      >
+                        <i class="ti ti-mail fs-6"></i>
+                        <p class="mb-0 fs-3">My Account</p>
+                      </a>
+                      <a
+                        href="javascript:void(0)"
+                        class="d-flex align-items-center gap-2 dropdown-item"
+                      >
+                        <i class="ti ti-list-check fs-6"></i>
+                        <p class="mb-0 fs-3">My Task</p>
+                      </a>
+                      <a
+                        href="../index.html"
+                        class="btn btn-outline-primary mx-3 mt-2 d-block"
+                        >Logout</a
+                      >
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </header>
+        <!--  Header End -->
+        <div class="container-fluid">
+          <div class="container-fluid">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title fw-semibold mb-4">Manage Course</h5>
+                <nav class="nav nav-pills nav-justified">
+                  <a
+                    class="nav-link active"
+                    aria-current="page"
+                    href="#orange"
+                    data-tab="orange"
+                  >
+                    Create Course
+                  </a>
+                  <a
+                    href="#green"
+                    data-tab="green"
+                    class="nav-link"
+                    aria-current="page"
+                  >
+                    Upload Course Content
+                  </a>
+                  <a
+                    href="#blue"
+                    data-tab="blue"
+                    class="nav-link"
+                    aria-current="page"
+                  >
+                    Courses
+                  </a>
+                </nav>
+                <div id="orange" class="b-tab active">
+                  <h3>Create Course</h3>
+                  <form>
+                    
+                    <div class="form-group">
+                      <label for="course">Course Name</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="courseTitle"
+                        required
+                      />
+                    </div>
+                   <div class="form-control">
+                    <label for="description">Course Description</label>
+                    <textarea
+                      class="form-control"
+                      id="description"
+                      rows="3"
+                      required
+                    ></textarea>
+
+                   </div>
+                   <div class="form-group">
+                    <button
+                    type="submit"
+                    id="createCourse"
+                    class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
+                  >
+                    Create
+                  </button>
+                   </div>
+                  </form>
+                </div>
+
+                <div id="green" class="b-tab">
+                  <form method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                      <label for="description">Course</label>
+                      <select
+                        name="selectCourse"
+                        id="course"
+                        class="form-control"
+                        required
+                      >
+                        <option value=""></option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="course">Content Title</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="contentTitle"
+                        required
+                      />
+                    </div>
+
+                    <div class="form-group">
+                      <label for="description">Content Description</label>
+                      <textarea
+                        class="form-control"
+                        aria-label="With textarea"
+                        id="contentDescription"
+                        rows="3"
+                        required
+                      ></textarea>
+                    </div>
+
+                   
+                      <div class="form-group">
+                        <label for="videoType">Video</label>
+                        Video URL
+                        <input
+                          type="radio"
+                          
+                          name="videoType"
+                        
+                          value="url"
+                        />
+
+                            Video File
+                        <input
+                          type="radio"
+                          value="file"
+                          name="videoType"
+                       
+
+                        />
+                      </div>
+
+                      <div class="form-control" id="videoDiv" style="display: none;">
+                        <label for="video">Video File</label>
+                        <input
+                          type="file"
+                          class="form-control"
+                          id="video"
+                          required
+                        />
+                        
+                      </div>
+                      <div class="form-control" id="urlDiv" style="display: none;">
+                        <label for="video">Video URL</label>
+                        <input
+                          type="url"
+                          class="form-control"
+                          id="url"
+                          required
+                        />
+                        </div>
+
+                    
+                      <div class="form-control">
+                        <button
+                        id="uploadVideo"
+                        class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
+                      >
+                        Upload Content
+                      </button>
+                      </div>
+                  </form>
+                  </div>
+                  </div>
+                </div>
+                <div id="blue" class="b-tab">
+
+                </div>
+              </div>
+              <div class="custom-loader"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="../assets/libs/jquery/dist/jquery.min.js"></script>
+    <script src="../assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/sidebarmenu.js"></script>
+    <script src="../assets/js/app.min.js"></script>
+    <script src="../assets/libs/simplebar/dist/simplebar.js"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"
+      type="text/javascript"
+    ></script>
+    <script src="../assets/js/loader.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script src="../assets/js/teacher-dashboard.js"></script>
+    <script src="../assets/js/updatepp.js"></script>
+    <script src="../assets/js/tabs.js"></script>
+    <script src="../assets/js/validate-login.js"></script>
+    <script src="../assets/js/logout.js"></script>
+  </body>
+</html>
