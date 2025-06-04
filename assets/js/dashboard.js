@@ -261,58 +261,108 @@ async function listCourses() {
 
 let user = sessionStorage.getItem('user');
 user = JSON.parse(user);
-user_id = user.id;
+user_id = user.id; // This is the student_id for the logged-in user
 
-listCourses();
+async function fetchUserProfile() {
+    if (!user_id) {
+        console.error('User ID not found for fetching profile.');
+        return;
+    }
+    try {
+        const response = await fetch(`${url}backend/student/get_user_profile.php?student_id=${user_id}`);
+        if (!response.ok) {
+            console.error(`HTTP error! status: ${response.status}`);
+            return;
+        }
+        const resData = await response.json();
+        if (resData.status === 0 && resData.profile) {
+            const walletBalanceDisplayEl = document.getElementById('wallet-balance-display');
+            if (walletBalanceDisplayEl) {
+                const wallet_balance = parseFloat(resData.profile.wallet_balance);
+                walletBalanceDisplayEl.textContent = '$' + (isNaN(wallet_balance) ? '0.00' : wallet_balance.toFixed(2));
+            }
+        } else {
+            console.error('Failed to fetch user profile:', resData.message);
+        }
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+    }
+}
+
+listCourses(); // For all available courses list
 
 async function listActiveCourse() {
   try {
     const response = await fetch(
-      `${url}student/get-student-courses.php?id=${user_id}`
+      `${url}student/get-student-courses.php?id=${user_id}` // user_id is the student_id here
     );
+    if (!response.ok) {
+        console.error(`HTTP error fetching student courses! status: ${response.status}`);
+        return;
+    }
     const resData = await response.json();
 
-    const data = resData.courses;
-    const courseLength = document.querySelector('.activecourses');
+    const activeCoursesCountEl = document.querySelector('h1.activecourses'); // Element showing count of active courses
+    if (activeCoursesCountEl) {
+        activeCoursesCountEl.innerHTML = resData.courses && resData.courses.length ? resData.courses.length : 0;
+    }
 
-    courseLength.innerHTML = ` ${
-      resData.courses.length ? resData.courses.length : 0
-    }`;
-    data.forEach((item) => {
-      const activecourses = document.querySelector('.activecourses');
-      const active = document.querySelector('.activeCourses');
-      const activeCourseName = document.querySelector('.coursename');
-      const pEl = document.createElement('p');
-      const pElCourseName = document.createElement('p');
-      pEl.classList.add('status');
+    const enrolledCoursesListDiv = document.getElementById('my-enrolled-courses-list');
+    if (!enrolledCoursesListDiv) {
+        console.error('#my-enrolled-courses-list element not found.');
+        return;
+    }
+    enrolledCoursesListDiv.innerHTML = ''; // Clear previous content
 
-      const { completion_status, course_id, course_title } = item;
-      pEl.innerHTML = completion_status;
-      pElCourseName.innerHTML = course_title;
-      activeCourseName.appendChild(pElCourseName);
-      active.appendChild(pEl);
+    if (resData.status === 0 && resData.courses && resData.courses.length > 0) {
+        resData.courses.forEach((item) => {
+            const courseItemDiv = document.createElement('div');
+            courseItemDiv.classList.add('enrolled-course-item', 'mb-3', 'p-3', 'border', 'rounded');
 
-      if (completion_status === 'Completed') {
-        pEl.style.color = 'green';
-      } else if (completion_status === 'In Progress') {
-        pEl.style.color = 'orange';
-      }
-    });
+            const titleEl = document.createElement('h6');
+            titleEl.classList.add('fw-semibold', 'mb-1');
+            titleEl.textContent = item.course_title;
+            courseItemDiv.appendChild(titleEl);
 
-    // console.log(title);
+            const statusEl = document.createElement('small');
+            statusEl.classList.add('text-muted', 'd-block', 'mb-1');
+            statusEl.textContent = `Status: ${item.completion_status}`;
+            if (item.completion_status === 'Completed') {
+                statusEl.style.color = 'green';
+            } else if (item.completion_status === 'In Progress') {
+                statusEl.style.color = 'orange';
+            }
+            courseItemDiv.appendChild(statusEl);
 
-    // if (!response.ok) {
-    //   throw new Error(resData.description);
-    //   return;
-    // }
-    // if (resData.status == 0) {
-    //   console.log(resData.courses);
-    // } else {
-    //   alert(resData.message);
-    // }
+            // Certificate Link Logic
+            if (item.completion_status === 'Completed') {
+                const certificateLink = document.createElement('a');
+                certificateLink.href = `${url}backend/student/generate_certificate.php?course_id=${item.course_id}&student_id=${user_id}`;
+                certificateLink.target = "_blank";
+                certificateLink.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'mt-1');
+
+                let linkText = 'Download Certificate';
+                const parsedCertificateFee = parseFloat(item.certificate_fee);
+                if (parsedCertificateFee > 0) {
+                    linkText += ` (Fee: $${parsedCertificateFee.toFixed(2)})`;
+                }
+                certificateLink.textContent = linkText;
+                courseItemDiv.appendChild(certificateLink);
+            }
+            enrolledCoursesListDiv.appendChild(courseItemDiv);
+        });
+    } else if (resData.status === 0) {
+        enrolledCoursesListDiv.innerHTML = '<p>You are not enrolled in any courses yet.</p>';
+    } else {
+        console.error('Error fetching student courses:', resData.message);
+        enrolledCoursesListDiv.innerHTML = '<p class="text-danger">Could not load your courses.</p>';
+    }
   } catch (error) {
-    console.log(error);
+    console.error('Error in listActiveCourse function:', error);
+    const enrolledCoursesListDiv = document.getElementById('my-enrolled-courses-list');
+    if(enrolledCoursesListDiv) enrolledCoursesListDiv.innerHTML = '<p class="text-danger">An error occurred while loading your courses.</p>';
   }
 }
 
-listActiveCourse();
+fetchUserProfile(); // Call to fetch wallet balance
+listActiveCourse(); // Call to list enrolled courses with certificate links

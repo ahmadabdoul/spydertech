@@ -18,6 +18,8 @@ async function listCourses() {
       'Title',
       'Description',
       'Teacher Username',
+      'Enrollment Fee',
+      'Certificate Fee',
       'Actions',
     ];
 
@@ -33,13 +35,15 @@ async function listCourses() {
     const tbody = document.createElement('tbody');
 
     courses.forEach((course) => {
-      const { id, title, description, teacher_username } = course;
+      const { id, title, description, teacher_username, enrollment_fee, certificate_fee } = course;
 
       const row = document.createElement('tr');
       const idCell = document.createElement('td');
       const titleCell = document.createElement('td');
       const descriptionCell = document.createElement('td');
       const teacherCell = document.createElement('td');
+      const enrollmentFeeCell = document.createElement('td');
+      const certificateFeeCell = document.createElement('td');
       const actionsCell = document.createElement('td');
 
       idCell.textContent = id;
@@ -47,10 +51,19 @@ async function listCourses() {
       descriptionCell.textContent = description;
       teacherCell.textContent = teacher_username;
 
+      // Format and set fee information
+      const parsedEnrollmentFee = parseFloat(enrollment_fee);
+      enrollmentFeeCell.textContent = parsedEnrollmentFee > 0 ? '$' + parsedEnrollmentFee.toFixed(2) : 'Free';
+
+      const parsedCertificateFee = parseFloat(certificate_fee);
+      certificateFeeCell.textContent = parsedCertificateFee > 0 ? '$' + parsedCertificateFee.toFixed(2) : 'Free';
+
       row.appendChild(idCell);
       row.appendChild(titleCell);
       row.appendChild(descriptionCell);
       row.appendChild(teacherCell);
+      row.appendChild(enrollmentFeeCell);
+      row.appendChild(certificateFeeCell);
 
       // Create the action button for enrollment
       const enrollButton = document.createElement('button');
@@ -104,5 +117,9 @@ async function enrollCourse(course) {
   const resData = await response.json();
 
   hideloader();
-  swal('Response', resData.message, 'info');
+  if (resData.status === 0) {
+    swal('Success', resData.message, 'success');
+  } else {
+    swal('Error', resData.message, 'error');
+  }
 }

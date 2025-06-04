@@ -238,13 +238,22 @@ display: block;
                 </div>
                 <div class="col-lg-12">
                   <!-- Number of All courses -->
-                  <div class="custom-loader"></div>
+                  <div class="custom-loader"></div> <!-- This loader seems for "Number of courses" card only -->
                   <div class="card">
                     <div class="card-body">
-                      <h5>Number of courses</h5>
-                      <div class="row alig n-items-start">
+                      <h5>Total Courses Available</h5> <!-- Changed title for clarity -->
+                      <div class="row align-items-start"> <!-- Corrected typo alig -> align -->
                         <h1 class="courselength"></h1>
                       </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-12">
+                  <!-- Wallet Balance -->
+                  <div class="card">
+                    <div class="card-body">
+                      <h5 class="card-title mb-3 fw-semibold">Wallet Balance</h5>
+                      <h4 id="wallet-balance-display" class="fw-semibold mb-0">$0.00</h4>
                     </div>
                   </div>
                 </div>
@@ -256,10 +265,16 @@ display: block;
               <div class="card w-100">
                 <div class="card-body p-4" id="courseList">
                   <div class="mb-4">
-                    <h5 class="card-title fw-semibold">Active Courses</h5>
-                    <div class="d-flex gap-9">
-                      <div class="activeCourses"></div>
-                      <div class="coursename"></div>
+                    <h5 class="card-title fw-semibold">My Enrolled Courses</h5> <!-- Changed title for clarity -->
+                    <!-- JS will populate this div with course items -->
+                    <div id="my-enrolled-courses-list">
+                      <!-- Example of how JS might structure items:
+                      <div class="enrolled-course-item mb-2">
+                        <p class="coursename fw-semibold mb-0">Course Title Here</p>
+                        <small class="activeCourses text-muted">Status: In Progress</small>
+                        <a href="..." class="btn btn-sm btn-outline-success ms-2">Download Certificate (Fee: $XX.XX)</a>
+                      </div>
+                      -->
                     </div>
                   </div>
                 </div>

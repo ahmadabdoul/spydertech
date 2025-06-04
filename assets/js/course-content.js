@@ -10,84 +10,143 @@ async function getCourseContent() {
   try {
     const response = await fetch(`${url}student/get-course-content.php?courseId=${id}`);
     const resData = await response.json();
-    courseContents = resData.course_contents;
+    courseContents = resData.course_contents; // Assuming this is an array
 
+    // General page setup
     $('#title').html(resData.course_details.title);
-    $('#description').html(courseContents[0].description);
+    const videoPlayer = document.querySelector('video');
+    const descriptionElement = document.getElementById('description');
 
+    // Setup progress tracking
     if (!localStorage.getItem('progress')) {
       localStorage.setItem('progress', JSON.stringify([]));
-    }else{
-      localStorage.setItem('currentVideo', JSON.stringify({ course: id, videoId: courseContents[0].id }));
-
     }
     const progressArray = JSON.parse(localStorage.getItem('progress'));
 
-    const lessonList = document.querySelector('.list-group');
-    lessonList.innerHTML = ''; // Clear existing content
-
-    let lastVideoId = null;
-    let lastVideoDuration = 0;
-
-    if (progressArray.length > 0) {
-      const lastVideoProgress = progressArray.find((progress) => progress.course === id);
-
-      if (lastVideoProgress) {
-        lastVideoId = lastVideoProgress.videoId;
-        lastVideoDuration = lastVideoProgress.duration || 0;
-      }
-    } else {
-      localStorage.setItem('currentVideo', JSON.stringify({ course: id, videoId: courseContents[0].id }));
+    // Set initial currentVideo if courseContents exist, needed for progress tracking
+    if (courseContents && courseContents.length > 0) {
+        // Check if there's a last played video for this course in progressArray
+        const lastPlayedVideoForCourse = progressArray.find(p => p.course === id && p.isLastPlayed); // Requires isLastPlayed flag
+        if (lastPlayedVideoForCourse) {
+             localStorage.setItem('currentVideo', JSON.stringify({ course: id, videoId: lastPlayedVideoForCourse.videoId }));
+        } else {
+            localStorage.setItem('currentVideo', JSON.stringify({ course: id, videoId: courseContents[0].id }));
+        }
     }
 
-    courseContents.forEach((content) => {
-      const listItem = document.createElement('li');
-      listItem.textContent = content.title;
-      listItem.classList.add('list-group-item');
 
-      if (content.id === lastVideoId) {
-        listItem.classList.add('watched');
-      }
+    const chaptersContainer = document.getElementById('chapters-container');
+    chaptersContainer.innerHTML = ''; // Clear existing content
 
-      listItem.addEventListener('click', () => {
-        const videoPlayer = document.querySelector('video');
-        $('#description').html(content.description);
+    let currentChapterTitle = null;
+    let chapterContentUl = null;
 
-        if (content.video_type == 'url') {
-          videoPlayer.src = content.video_url;
-        } else {
-          videoPlayer.src = `${url}${content.video_url}`;
+    if (courseContents && courseContents.length > 0) {
+      courseContents.forEach((contentItem) => {
+        if (contentItem.chapter_title !== currentChapterTitle) {
+          currentChapterTitle = contentItem.chapter_title;
+
+          const chapterTitleElement = document.createElement('h5');
+          chapterTitleElement.textContent = currentChapterTitle;
+          chapterTitleElement.classList.add('mt-4', 'mb-2');
+          chaptersContainer.appendChild(chapterTitleElement);
+
+          chapterContentUl = document.createElement('ul');
+          chapterContentUl.classList.add('list-group', 'mb-3');
+          chaptersContainer.appendChild(chapterContentUl);
         }
 
-        const currentVideo = { course: id, videoId: content.id };
-        localStorage.setItem('currentVideo', JSON.stringify(currentVideo));
+        const listItem = document.createElement('li');
+        listItem.textContent = contentItem.title;
+        listItem.classList.add('list-group-item');
+        listItem.style.cursor = 'pointer'; // Make it look clickable
 
-        const progressIndex = progressArray.findIndex(
-          (progress) =>
-            progress.course === id && progress.videoId === content.id
-        );
+        // Check for watched status (optional, based on existing logic)
+        const progressDataForThisItem = progressArray.find(p => p.course === id && p.videoId === contentItem.id);
+        if (progressDataForThisItem && progressDataForThisItem.duration >= videoPlayer.duration -1 ) { // check if video is fully watched
+             // listItem.classList.add('watched'); // Add a class if needed
+        }
 
-        if (progressIndex !== -1) {
-          const progressData = progressArray[progressIndex];
-          videoPlayer.currentTime = progressData.duration || 0;
-        } else {
-          progressArray.push({
-            course: id,
-            videoId: content.id,
-            duration: lastVideoDuration,
-          });
-          localStorage.setItem('progress', JSON.stringify(progressArray));
+
+        listItem.addEventListener('click', () => {
+          // Clear previous content
+          descriptionElement.innerHTML = '';
+          videoPlayer.style.display = 'none';
+          videoPlayer.src = '';
+
+          // Display text content
+          if (contentItem.content && contentItem.content.trim() !== '') {
+            descriptionElement.innerHTML = contentItem.content;
+          }
+
+          // Display video content
+          if (contentItem.video_url && contentItem.video_url.trim() !== '') {
+            if (contentItem.video_type === 'url') {
+              videoPlayer.src = contentItem.video_url;
+            } else {
+              videoPlayer.src = `${url}${contentItem.video_url}`;
+            }
+            videoPlayer.style.display = 'block';
+          }
+
+          const currentVideo = { course: id, videoId: contentItem.id };
+          localStorage.setItem('currentVideo', JSON.stringify(currentVideo));
+
+          // Handle progress loading
+          const progressIndex = progressArray.findIndex(
+            (progress) =>
+              progress.course === id && progress.videoId === contentItem.id
+          );
+
+          if (progressIndex !== -1) {
+            const progressData = progressArray[progressIndex];
+            videoPlayer.currentTime = progressData.duration || 0;
+          } else {
+            // Add new entry if it doesn't exist, though timeupdate will handle ongoing progress
+            progressArray.push({
+              course: id,
+              videoId: contentItem.id,
+              duration: 0,
+            });
+            localStorage.setItem('progress', JSON.stringify(progressArray));
+          }
+          videoPlayer.play(); // Start playing the selected video
+        });
+
+        if (chapterContentUl) {
+          chapterContentUl.appendChild(listItem);
         }
       });
 
-      lessonList.appendChild(listItem);
-    });
+      // Initial content display (first item)
+      const firstContentItem = courseContents[0];
+      descriptionElement.innerHTML = ''; // Clear description
+      videoPlayer.style.display = 'none'; // Hide video player initially
+      videoPlayer.src = '';
 
-    const videoPlayer = document.querySelector('video');
-    if (courseContents[0].video_type == 'url') {
-      videoPlayer.src = courseContents[0].video_url;
+
+      if (firstContentItem.content && firstContentItem.content.trim() !== '') {
+        descriptionElement.innerHTML = firstContentItem.content;
+      }
+      if (firstContentItem.video_url && firstContentItem.video_url.trim() !== '') {
+        if (firstContentItem.video_type === 'url') {
+          videoPlayer.src = firstContentItem.video_url;
+        } else {
+          videoPlayer.src = `${url}${firstContentItem.video_url}`;
+        }
+        videoPlayer.style.display = 'block';
+         // Load progress for the first video if available
+        const firstVideoProgress = progressArray.find(p => p.course === id && p.videoId === firstContentItem.id);
+        if (firstVideoProgress) {
+            videoPlayer.currentTime = firstVideoProgress.duration || 0;
+        }
+      }
+      // currentVideo localStorage already set above or defaults to first item
     } else {
-      videoPlayer.src = `${url}${courseContents[0].video_url}`;
+      // Handle case where there are no course contents
+      chaptersContainer.innerHTML = '<p>No content available for this course yet.</p>';
+      descriptionElement.innerHTML = '';
+      videoPlayer.style.display = 'none';
     }
 
     videoPlayer.addEventListener('timeupdate', () => {

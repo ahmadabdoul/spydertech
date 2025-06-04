@@ -57,7 +57,7 @@ if (isset($obj['courseId']) || isset($_GET['courseId'])) {
     }
 
     // Retrieve course contents/lists
-    $query = "SELECT * FROM course_content WHERE course_id = $courseId";
+    $query = "SELECT id, course_id, title, chapter_title, content, video_url, video_type FROM course_content WHERE course_id = $courseId ORDER BY chapter_title, id ASC";
     $result = mysqli_query($conn, $query) or die(json_encode(array('status' => 1, 'message' => 'Error occurred during retrieval of course contents.')));
 
     if (mysqli_num_rows($result) > 0) {
