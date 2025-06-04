@@ -1,128 +1,203 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LMS </title>
-    <link
-      rel="shortcut icon"
-      type="image/png"
-      href="assets/images/logos/favicon.png"
-    />
-    <link rel="stylesheet" href="assets/css/styles.min.css" />
-    
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spydertech LMS - Your Learning Destination</title>
+    <!-- Main Theme CSS (assuming Bootstrap or similar) -->
+    <link rel="stylesheet" href="assets/css/styles.min.css">
+    <!-- Custom Landing Page CSS -->
+    <link rel="stylesheet" href="landing-page.css">
     <style>
-      .table{
-          position: relative;
-      }
-      .custom-loader {
-          position: absolute;
-          width:50px;
-          height:50px;
-          border-radius:50%;
-          border:8px solid;
-          border-color:#E4E4ED;
-          border-right-color: #766DF4;
-          animation:s2 1s infinite linear;
-          inset: 50%;
-          display: none;
-}
+        /* Basic styles for landing sections to make them visible during development */
+        .landing-section {
+            padding: 60px 15px;
+            min-height: 70vh; /* Make sections take up significant viewport height */
+            border-bottom: 1px solid #eee; /* Separator */
+        }
+        #home {
+            min-height: 90vh;
+            background-color: #f8f9fa; /* Light background for hero */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        footer {
+            padding: 20px;
+            text-align: center;
+            background-color: #333;
+            color: #fff;
+        }
+        /* Adjust body padding to account for fixed-top navbar */
+        body {
+            padding-top: 70px; /* Increased padding for potentially taller navbar or preference */
+        }
+    </style>
+</head>
+<body>
 
-.showloader{
-  display: block;
-}
-@keyframes s2 {to{transform: rotate(1turn)}}
-  </style>
-  </head>
-
-  <body>
-    <!--  Body Wrapper -->
-    <div
-      class="page-wrapper"
-      id="main-wrapper"
-      data-layout="vertical"
-      data-navbarbg="skin6"
-      data-sidebartype="full"
-      data-sidebar-position="fixed"
-      data-header-position="fixed"
-    >
-      <div
-        class="position-relative overflow-hidden radial-gradient min-vh-100 d-flex align-items-center justify-content-center"
-      >
-        <div class="d-flex align-items-center justify-content-center w-100">
-          <div class="row justify-content-center w-100">
-            <div class="col-md-8 col-lg-6 col-xxl-3">
-              <div class="card mb-0">
-                <div class="card-body">
-                  <h4 class="text-center">Learning Management System</h4>
-                  <form class="loginForm">
-                    <div class="mb-3">
-                      <label for="exampleInputEmail1" class="form-label"
-                        >Username</label
-                      >
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="InputUsername"
-                        aria-describedby="username"
-                      />
-                    </div>
-                    <div class="mb-4">
-                      <label for="exampleInputPassword1" class="form-label"
-                        >Password</label
-                      >
-                      <input
-                        type="password"
-                        class="form-control"
-                        id="InputPassword"
-                      />
-                    </div>
-                    <div class="mb-4">
-                      <label for="exampleInputPassword1" class="form-label"
-                        >Role</label
-                      >
-
-                      <select
-                        class="form-control"
-                        name="selectMenu"
-                        id="select"
-                      >
-                        <option value="Student">Student</option>
-                        <option value="Teacher">Teacher</option>
-                      </select>
-                    </div>
-                    <button
-                      href="./index.html"
-                      class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
-                    >
-                      Sign In
-                    </button>
-                    <div
-                      class="d-flex align-items-center justify-content-center"
-                    >
-                      <p class="fs-3 mb-0 fw-bold">Don't have an account?</p>
-                      <a
-                        class="text-primary fw-bold ms-2"
-                        href="./authentication-register.html"
-                        >Create an account</a
-                      >
-                    </div>
-                    <div class="custom-loader"></div>
-                  </form>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4" href="#home">Spydertech LMS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About Us</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#education">Education</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#pricing">Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tutors">Become a Tutor</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                </ul>
+                <div class="d-flex ms-lg-3">
+                    <a href="authentication-register.html" class="btn btn-primary me-2">Start Learning</a>
+                    <a href="authentication-login.html" class="btn btn-outline-secondary">Login</a>
                 </div>
-              </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
-    <script>
-      localStorage.setItem('url', '../backend/');
-    </script>
-    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    </nav>
+
+    <!-- Main Content Sections -->
+    <main>
+        <section id="home" class="landing-section">
+            <div class="container">
+                <h1 class="display-3 fw-bold">Welcome to Spydertech LMS!</h1>
+                <p class="lead my-4 fs-5">Your journey to knowledge and skill enhancement starts here. Explore a wide range of courses tailored for you.</p>
+                <a href="student/courses.html" class="btn btn-lg btn-success py-2 px-4">Explore Courses</a>
+            </div>
+        </section>
+
+        <section id="about" class="landing-section">
+            <div class="container">
+                <h2 class="display-5 text-center mb-5">About Us</h2>
+                <p class="lead text-center col-md-8 mx-auto">Spydertech LMS is dedicated to providing high-quality, accessible, and engaging online education. Our mission is to empower learners and educators worldwide by leveraging cutting-edge technology and pedagogical best practices. We envision a world where anyone, anywhere can achieve their learning goals and unlock their full potential.</p>
+            </div>
+        </section>
+
+        <section id="education" class="landing-section bg-light">
+            <div class="container">
+                <h2 class="display-5 text-center mb-5">Our Courses</h2>
+                <p class="lead text-center mb-4 col-md-8 mx-auto">Discover a diverse range of courses designed to meet your learning needs. From technology to business, arts to sciences, find your path to success.</p>
+                <div class="row text-center">
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Technology</h5>
+                                <p class="card-text flex-grow-1">Dive into coding, data science, cybersecurity, and more.</p>
+                                <a href="student/courses.html?category=tech" class="btn btn-outline-primary mt-auto">View Tech Courses</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Business</h5>
+                                <p class="card-text flex-grow-1">Master marketing, finance, leadership, and entrepreneurship.</p>
+                                <a href="student/courses.html?category=business" class="btn btn-outline-primary mt-auto">View Business Courses</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">Creative Arts</h5>
+                                <p class="card-text flex-grow-1">Unleash your creativity with design, photography, and writing.</p>
+                                <a href="student/courses.html?category=arts" class="btn btn-outline-primary mt-auto">View Arts Courses</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="landing-section">
+            <div class="container">
+                <h2 class="display-5 text-center mb-5">Flexible Pricing Options</h2>
+                <p class="lead text-center col-md-8 mx-auto">We believe in transparent and affordable education. Our pricing structure is designed to accommodate various learning needs and budgets. Information about individual course fees, potential subscription models, and certificate costs will be detailed here.</p>
+                <div class="text-center mt-4">
+                    <p><em>Detailed pricing information coming soon. Most courses are individually priced. Check course details for specific fees.</em></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="tutors" class="landing-section bg-light">
+            <div class="container">
+                <h2 class="display-5 text-center mb-5">Become a Tutor</h2>
+                <p class="lead text-center col-md-8 mx-auto">Share your expertise and passion with learners from around the globe. Joining Spydertech LMS as a tutor offers a rewarding opportunity to make an impact, develop your teaching skills, and earn an income. We provide the platform and support you need to create engaging courses and connect with students.</p>
+                <div class="text-center mt-4">
+                    <a href="teacher/authentication-register.html" class="btn btn-lg btn-info py-2 px-4">Apply to Teach</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="landing-section">
+            <div class="container">
+                <h2 class="display-5 text-center mb-5">Get In Touch</h2>
+                <p class="lead text-center mb-4 col-md-8 mx-auto">Have questions or need support? We're here to help!</p>
+                <div class="row">
+                    <div class="col-lg-6 col-md-8 mx-auto">
+                        <form id="contact-form-placeholder">
+                            <div class="mb-3">
+                                <label for="contactName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="contactName" placeholder="Your Name">
+                            </div>
+                            <div class="mb-3">
+                                <label for="contactEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="contactEmail" placeholder="Your Email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="contactMessage" class="form-label">Message</label>
+                                <textarea class="form-control" id="contactMessage" rows="4" placeholder="Your Message"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Send Message (Placeholder)</button>
+                        </form>
+                        <p class="text-center mt-3">Or email us at: <a href="mailto:support@spydertech.lms">support@spydertech.lms</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4">
+        <div class="container">
+            <p class="mb-0">&copy; <span id="currentYear"></span> Spydertech LMS. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
     <script src="assets/libs/jquery/dist/jquery.min.js"></script>
     <script src="assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/js/loader.js"></script>
-    <script src="assets/js/login.js"></script>
-  </body>
+    <script src="landing-page.js"></script>
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        // Basic smooth scroll for navbar links
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
 </html>

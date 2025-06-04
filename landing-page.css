@@ -1,0 +1,195 @@
+/* Global and Body Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background-color: #fff;
+    padding-top: 70px; /* Adjust if navbar height changes. From index.html inline style. */
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600; /* Slightly bolder headings */
+}
+
+/* Navigation Bar */
+.navbar-brand {
+    font-size: 1.75rem; /* Make brand slightly larger */
+}
+
+.navbar .nav-link {
+    color: #555;
+    padding: 0.5rem 1rem;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link.active { /* Assuming JS might add 'active' class for scrollspy */
+    color: #007bff; /* Bootstrap primary color */
+}
+
+.navbar .btn-primary {
+    font-weight: 500;
+}
+.navbar .btn-outline-secondary {
+    font-weight: 500;
+}
+
+
+/* Landing Section Base Styles */
+.landing-section {
+    padding: 80px 15px;
+    min-height: 60vh; /* Default min-height for sections */
+}
+
+.landing-section h2.display-5 { /* Section titles */
+    font-weight: 700;
+    color: #2c3e50; /* Darker blue-grey for titles */
+}
+
+.landing-section p.lead {
+    font-size: 1.15rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+}
+
+/* Specific Section Styling */
+
+/* Home (Hero) Section */
+#home {
+    background-color: #e9ecef; /* A slightly different light grey for hero */
+    color: #212529;
+    text-align: center;
+    min-height: calc(90vh - 70px); /* Full viewport height minus navbar */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#home h1.display-3 { /* Overriding Bootstrap's display-3 if needed, or use as is */
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+#home p.lead {
+    font-size: 1.25rem; /* Larger lead text for hero */
+    max-width: 700px; /* Constrain width for readability */
+    margin-bottom: 2rem;
+}
+
+#home .btn-success { /* Call to action button */
+    font-size: 1.2rem;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.3rem;
+}
+
+/* About Us Section */
+#about {
+    /* background-color: #fff; */ /* Default */
+}
+
+/* Education Section */
+#education {
+    background-color: #f8f9fa; /* Alternate light background */
+}
+
+#education .card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+#education .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important; /* Enhanced shadow on hover */
+}
+#education .card-title {
+    color: #0056b3; /* A slightly different blue for card titles */
+}
+
+
+/* Pricing Section */
+#pricing {
+    /* background-color: #fff; */
+}
+#pricing em {
+    font-size: 0.9rem;
+    color: #6c757d; /* Bootstrap muted color */
+}
+
+/* Become a Tutor Section */
+#tutors {
+    background-color: #f8f9fa; /* Alternate light background */
+}
+#tutors .btn-info {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Contact Section */
+#contact {
+    /* background-color: #fff; */
+}
+
+#contact #contact-form-placeholder .form-label {
+    font-weight: 500;
+}
+
+#contact #contact-form-placeholder .btn-primary {
+    font-weight: 500;
+}
+
+
+/* Footer */
+footer {
+    background-color: #2c3e50; /* Darker footer */
+    color: #ecf0f1; /* Lighter text for contrast */
+    padding: 30px 0;
+    text-align: center;
+}
+
+footer p {
+    margin-bottom: 0.5rem;
+}
+
+footer a {
+    color: #3498db; /* Brighter link color for dark background */
+}
+
+footer a:hover {
+    color: #5dade2;
+}
+
+/* Responsive Adjustments (Optional basic examples) */
+@media (max-width: 768px) {
+    #home h1.display-3 {
+        font-size: 2.5rem; /* Smaller heading on smaller screens */
+    }
+    #home p.lead {
+        font-size: 1.1rem;
+    }
+    .landing-section {
+        padding: 60px 15px;
+        min-height: auto; /* Allow sections to be shorter on mobile */
+    }
+    .landing-section h2.display-5 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    body {
+        padding-top: 56px; /* Default Bootstrap navbar height, if it shrinks */
+    }
+    #home h1.display-3 {
+        font-size: 2rem;
+    }
+     #home p.lead {
+        font-size: 1rem;
+    }
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+    .navbar .btn-primary, .navbar .btn-outline-secondary {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
