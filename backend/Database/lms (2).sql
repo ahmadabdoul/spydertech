@@ -66,14 +66,14 @@ CREATE TABLE `course_content` (
 -- Dumping data for table `course_content`
 --
 
-INSERT INTO `course_content` (`id`, `course_id`, `title`, `content`, `video_type`, `video_url`) VALUES
-(1, 1, 'Getting Started with Programming', 'Introduction to programming concepts', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(2, 1, 'Variables and Data Types', 'Learn about variables and data types in programming', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(3, 2, 'HTML and CSS Basics', 'Building blocks of web development', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(4, 2, 'JavaScript Fundamentals', 'Introduction to JavaScript programming', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(5, 3, 'Data Analysis Techniques', 'Explore various data analysis methods', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(6, 4, 'Introduction', 'Civil engineering is a professional engineering discipline that deals with the design, construction, and maintenance of the physical and naturally built environment, including public works such as roads, bridges, canals, dams, airports, sewage systems, pipelines, structural components of buildings, and railways.', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
-(7, 4, 'Cement', 'lorem ipsum', 'video', 'uploads/Begin_Again_2014_(2014)_BluRay_high_(fzmovies.net)_e9f83f64bc270027c86f6c3983fde30b.mp4');
+INSERT INTO `course_content` (`id`, `course_id`, `title`, `chapter_title`, `content`, `video_type`, `video_url`) VALUES
+(1, 1, 'Getting Started with Programming', NULL, 'Introduction to programming concepts', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(2, 1, 'Variables and Data Types', NULL, 'Learn about variables and data types in programming', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(3, 2, 'HTML and CSS Basics', NULL, 'Building blocks of web development', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(4, 2, 'JavaScript Fundamentals', NULL, 'Introduction to JavaScript programming', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(5, 3, 'Data Analysis Techniques', NULL, 'Explore various data analysis methods', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(6, 4, 'Introduction', NULL, 'Civil engineering is a professional engineering discipline that deals with the design, construction, and maintenance of the physical and naturally built environment, including public works such as roads, bridges, canals, dams, airports, sewage systems, pipelines, structural components of buildings, and railways.', 'url', 'https://joy1.videvo.net/videvo_files/video/free/video0454/large_watermarked/_import_6064a2d0ec2a62.28720221_preview.mp4'),
+(7, 4, 'Cement', NULL, 'lorem ipsum', 'video', 'uploads/Begin_Again_2014_(2014)_BluRay_high_(fzmovies.net)_e9f83f64bc270027c86f6c3983fde30b.mp4');
 
 -- --------------------------------------------------------
 
@@ -242,6 +242,30 @@ CREATE TABLE `student_quiz_attempts` (
   CONSTRAINT `student_quiz_attempts_ibfk_2` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `student_content_progress`
+--
+
+CREATE TABLE `student_content_progress` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `course_id` int(11) NOT NULL,
+  `content_id` int(11) NOT NULL,
+  `completed_status` tinyint(1) NOT NULL DEFAULT 0, -- 0 for false, 1 for true
+  `last_position` varchar(50) DEFAULT NULL, -- To store time like '1:23' or percentage '85%' or scroll position
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `student_course_content` (`student_id`,`course_id`,`content_id`), -- Ensures one record per student per content item
+  KEY `student_id_idx` (`student_id`), -- Added specific index name
+  KEY `course_id_idx` (`course_id`), -- Added specific index name
+  KEY `content_id_idx` (`content_id`), -- Added specific index name
+  CONSTRAINT `fk_progress_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_progress_course` FOREIGN KEY (`course_id`) REFERENCES `courses` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_progress_content` FOREIGN KEY (`content_id`) REFERENCES `course_content` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Indexes for dumped tables
 --
@@ -344,6 +368,12 @@ ALTER TABLE `quiz_questions`
 -- AUTO_INCREMENT for table `student_quiz_attempts`
 --
 ALTER TABLE `student_quiz_attempts`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+--
+-- AUTO_INCREMENT for table `student_content_progress`
+--
+ALTER TABLE `student_content_progress`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
 
 --
