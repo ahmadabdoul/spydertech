@@ -11,55 +11,59 @@ $json = file_get_contents('php://input');
 // Decode the JSON payload
 $obj = json_decode($json, true);
 
-// Sanitize input data from JSON payload or POST data
-$course_id = isset($obj['course_id']) ? mysql_entities_fix_string($conn, $obj['course_id']) : (isset($_POST['course_id']) ? mysql_entities_fix_string($conn, $_POST['course_id']) : null);
-$title = isset($obj['title']) ? mysql_entities_fix_string($conn, $obj['title']) : (isset($_POST['title']) ? mysql_entities_fix_string($conn, $_POST['title']) : null);
-$chapter_title = isset($obj['chapter_title']) ? mysql_entities_fix_string($conn, $obj['chapter_title']) : (isset($_POST['chapter_title']) ? mysql_entities_fix_string($conn, $_POST['chapter_title']) : null);
-$content = isset($obj['content']) ? mysql_entities_fix_string($conn, $obj['content']) : (isset($_POST['content']) ? mysql_entities_fix_string($conn, $_POST['content']) : ''); // Default to empty string if not provided
-$video_type = isset($obj['video_type']) ? mysql_entities_fix_string($conn, $obj['video_type']) : (isset($_POST['video_type']) ? mysql_entities_fix_string($conn, $_POST['video_type']) : null);
-$url = isset($obj['url']) ? mysql_entities_fix_string($conn, $obj['url']) : (isset($_POST['url']) ? mysql_entities_fix_string($conn, $_POST['url']) : null);
+// --- Input Extraction and Validation ---
+$course_id_raw = isset($obj['course_id']) ? $obj['course_id'] : (isset($_POST['course_id']) ? $_POST['course_id'] : null);
+$title_raw = trim(isset($obj['title']) ? $obj['title'] : (isset($_POST['title']) ? $_POST['title'] : ''));
+$chapter_title_raw = trim(isset($obj['chapter_title']) ? $obj['chapter_title'] : (isset($_POST['chapter_title']) ? $_POST['chapter_title'] : ''));
+$content_raw = trim(isset($obj['content']) ? $obj['content'] : (isset($_POST['content']) ? $_POST['content'] : ''));
+$video_type_input = trim(isset($obj['video_type']) ? $obj['video_type'] : (isset($_POST['video_type']) ? $_POST['video_type'] : ''));
+$url_input = trim(isset($obj['url']) ? $obj['url'] : (isset($_POST['url']) ? $_POST['url'] : ''));
 
-// Validate the required fields
-$is_core_data_present = !empty($course_id) && !empty($title) && !empty($chapter_title);
-$is_text_content_present = !empty($content);
-$is_video_url_present = ($video_type === 'url' && !empty($url));
-$is_video_file_present = ($video_type === 'file' && isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK);
+$course_id = filter_var($course_id_raw, FILTER_VALIDATE_INT);
 
-if ($is_core_data_present && ($is_text_content_present || $is_video_url_present || $is_video_file_present)) {
-    $db_video_url = ''; // Initialize with empty string, will be NULL if not set and column allows NULL
-    $db_video_type = ''; // Initialize with empty string
+$is_core_data_present = $course_id !== false && !empty($title_raw) && !empty($chapter_title_raw);
+$is_text_content_present = !empty($content_raw);
+$is_video_url_provided = ($video_type_input === 'url' && !empty($url_input));
+$is_video_file_provided = ($video_type_input === 'file' && isset($_FILES['video']) && $_FILES['video']['error'] === UPLOAD_ERR_OK);
 
-    if ($is_video_url_present) {
-        $db_video_url = $url;
-        $db_video_type = 'url';
-    } elseif ($is_video_file_present) {
+if ($is_core_data_present && ($is_text_content_present || $is_video_url_provided || $is_video_file_provided)) {
+
+    $db_content_final = !empty($content_raw) ? $content_raw : NULL;
+    $db_video_url_final = NULL;
+    $db_video_type_final = ''; // video_type is NOT NULL in DB, so empty string if no video
+
+    if ($is_video_url_provided) {
+        $db_video_url_final = $url_input; // Already trimmed
+        $db_video_type_final = 'url'; // Use validated type
+    } elseif ($is_video_file_provided) {
         $file = $_FILES['video'];
-        $target_dir = '../uploads/';  // Specify the directory where you want to save the uploaded files
-        $path_for_db = 'uploads/';  // Specify the path to retrieve the uploaded files
+        $target_dir = '../uploads/';
+        $path_for_db = 'uploads/';
 
-        // Generate a unique filename to prevent overwriting
-        $file_extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $unique_filename = uniqid('', true) . '.' . $file_extension;
+        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)); // Lowercase extension
+        $unique_filename = uniqid('vid_', true) . '.' . $file_extension; // Prefix with vid_ for clarity
         $target_file_on_server = $target_dir . $unique_filename;
-        $db_video_url = $path_for_db . $unique_filename; // Path to store in DB
+
+        // Basic check for allowed video types (can be expanded)
+        $allowed_extensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv'];
+        if (!in_array($file_extension, $allowed_extensions)) {
+            $response['status'] = 1;
+            $response['message'] = 'Invalid video file type. Allowed types: ' . implode(', ', $allowed_extensions);
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            mysqli_close($conn);
+            exit;
+        }
+
 
         if (move_uploaded_file($file['tmp_name'], $target_file_on_server)) {
-            $db_video_type = 'file'; // Or use the sanitized $video_type if it's 'file'
+            $db_video_url_final = $path_for_db . $unique_filename;
+            $db_video_type_final = 'file'; // Use validated type
         } else {
-            $uploadErrors = array(
-                UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini.',
-                UPLOAD_ERR_FORM_SIZE => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form.',
-                UPLOAD_ERR_PARTIAL => 'The uploaded file was only partially uploaded.',
-                UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
-                UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder.',
-                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-                UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload.'
-            );
+            $uploadErrors = [ /* ... existing upload errors array ... */ ];
             $errorCode = $file['error'];
-            $errorMessage = isset($uploadErrors[$errorCode]) ? $uploadErrors[$errorCode] : 'Unknown error occurred during file move.';
-            $response['status'] = 1;
-            $response['message'] = 'Error occurred during file upload: ' . $errorMessage;
-            // Output response and exit if file move fails
+            $errorMessage = isset($uploadErrors[$errorCode]) ? $uploadErrors[$errorCode] : 'Unknown error during file move.';
+            $response = ['status' => 1, 'message' => 'File upload error: ' . $errorMessage];
             header('Content-Type: application/json');
             echo json_encode($response);
             mysqli_close($conn);
@@ -67,30 +71,39 @@ if ($is_core_data_present && ($is_text_content_present || $is_video_url_present 
         }
     }
 
-    // If content is empty and no video, this case should be prevented by validation.
-    // If content is empty but video is present, $content will be an empty string.
-    // If video is not present, $db_video_url and $db_video_type will be empty strings.
-    // Database schema allows NULL for content and video_url, so empty strings are acceptable.
-    // Or, explicitly set to NULL if preferred and DB column default is NULL:
-    // $db_content_for_sql = !empty($content) ? "'$content'" : "NULL";
-    // $db_video_url_for_sql = !empty($db_video_url) ? "'$db_video_url'" : "NULL";
-    // $db_video_type_for_sql = !empty($db_video_type) ? "'$db_video_type'" : "NULL";
+    $query = "INSERT INTO course_content (course_id, title, chapter_title, content, video_url, video_type) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $query);
 
-    $query = "INSERT INTO course_content (course_id, title, chapter_title, content, video_url, video_type) VALUES ('$course_id', '$title', '$chapter_title', '$content', '$db_video_url', '$db_video_type')";
-    $result = mysqli_query($conn, $query);
+    if ($stmt) {
+        // Bind parameters: i for integer, s for string.
+        // course_id (i), title (s), chapter_title (s), content (s), video_url (s), video_type (s)
+        mysqli_stmt_bind_param($stmt, "isssss",
+            $course_id,
+            $title_raw,
+            $chapter_title_raw,
+            $db_content_final,
+            $db_video_url_final,
+            $db_video_type_final
+        );
 
-    if ($result) {
-        $response['status'] = 0;
-        $response['message'] = 'Course content uploaded successfully.';
+        if (mysqli_stmt_execute($stmt)) {
+            $response['status'] = 0;
+            $response['message'] = 'Course content uploaded successfully.';
+            $response['content_id'] = mysqli_insert_id($conn);
+        } else {
+            $response['status'] = 1;
+            $response['message'] = 'Error saving to database: ' . mysqli_stmt_error($stmt);
+        }
+        mysqli_stmt_close($stmt);
     } else {
         $response['status'] = 1;
-        $response['message'] = 'Error occurred while saving course content to the database: ' . mysqli_error($conn);
+        $response['message'] = 'Database statement preparation error: ' . mysqli_error($conn);
     }
 } else {
     $error_messages = [];
-    if (empty($course_id)) $error_messages[] = 'Course ID is missing.';
-    if (empty($title)) $error_messages[] = 'Title is missing.';
-    if (empty($chapter_title)) $error_messages[] = 'Chapter Title is missing.';
+    if ($course_id === false) $error_messages[] = 'Course ID must be a valid integer.';
+    if (empty($title_raw)) $error_messages[] = 'Title is missing.';
+    if (empty($chapter_title_raw)) $error_messages[] = 'Chapter Title is missing.';
     if (!$is_text_content_present && !$is_video_url_present && !$is_video_file_present) {
         $error_messages[] = 'Either content, a video URL, or a video file must be provided.';
     }

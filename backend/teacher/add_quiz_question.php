@@ -23,57 +23,68 @@ if ($obj) {
     }
 
     if (empty($missing_fields)) {
-        // Sanitize all inputs
-        $quiz_id = mysql_entities_fix_string($conn, $obj['quiz_id']);
-        $question_text = mysql_entities_fix_string($conn, $obj['question_text']);
-        $option_a = mysql_entities_fix_string($conn, $obj['option_a']);
-        $option_b = mysql_entities_fix_string($conn, $obj['option_b']);
-        $correct_option = mysql_entities_fix_string($conn, strtolower($obj['correct_option'])); // Ensure lowercase
+        // Get raw inputs
+        $quiz_id_raw = $obj['quiz_id'];
+        $question_text_raw = trim($obj['question_text']);
+        $option_a_raw = trim($obj['option_a']);
+        $option_b_raw = trim($obj['option_b']);
+        $correct_option_raw = trim(strtolower($obj['correct_option'])); // Ensure lowercase and trim
 
-        // Sanitize optional fields (option_c, option_d)
-        $option_c = isset($obj['option_c']) ? mysql_entities_fix_string($conn, $obj['option_c']) : '';
-        $option_d = isset($obj['option_d']) ? mysql_entities_fix_string($conn, $obj['option_d']) : '';
+        $option_c_raw = isset($obj['option_c']) ? trim($obj['option_c']) : '';
+        $option_d_raw = isset($obj['option_d']) ? trim($obj['option_d']) : '';
 
-        // Validate that required sanitized inputs are not empty
-        if (!empty($quiz_id) && !empty($question_text) && !empty($option_a) && !empty($option_b) && !empty($correct_option)) {
+        // Validate inputs
+        $quiz_id = filter_var($quiz_id_raw, FILTER_VALIDATE_INT);
 
-            // Validate correct_option
+        if ($quiz_id === false) {
+            $response['status'] = 1;
+            $response['message'] = 'Quiz ID must be a valid integer.';
+        } elseif (empty($question_text_raw) || empty($option_a_raw) || empty($option_b_raw) || empty($correct_option_raw)) {
+            $response['status'] = 1;
+            $response['message'] = 'Question text, option A, option B, and correct option cannot be empty.';
+        } else {
             $valid_correct_options = ['a', 'b', 'c', 'd'];
-            if (!in_array($correct_option, $valid_correct_options)) {
+            if (!in_array($correct_option_raw, $valid_correct_options)) {
                 $response['status'] = 1;
                 $response['message'] = "Invalid 'correct_option'. Must be one of 'a', 'b', 'c', or 'd'.";
             } else {
-                // Prepare optional fields for SQL (insert NULL if empty)
-                $option_c_for_sql = !empty($option_c) ? "'$option_c'" : "NULL";
-                $option_d_for_sql = !empty($option_d) ? "'$option_d'" : "NULL";
+                // Prepare optional fields for SQL (use NULL if empty string)
+                $option_c_prepared = !empty($option_c_raw) ? $option_c_raw : NULL;
+                $option_d_prepared = !empty($option_d_raw) ? $option_d_raw : NULL;
 
-                // Construct the SQL query
-                $query = "INSERT INTO quiz_questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option)
-                          VALUES ('$quiz_id', '$question_text', '$option_a', '$option_b', $option_c_for_sql, $option_d_for_sql, '$correct_option')";
+                // SQL query with placeholders
+                $query = "INSERT INTO quiz_questions
+                              (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option)
+                          VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-                // Execute the query
-                $result = mysqli_query($conn, $query);
+                $stmt = mysqli_prepare($conn, $query);
+                if ($stmt) {
+                    // Bind parameters: i for integer, s for string.
+                    // For nullable strings, pass the variable directly. MySQLi handles NULL correctly.
+                    mysqli_stmt_bind_param($stmt, "issssss",
+                        $quiz_id,
+                        $question_text_raw,
+                        $option_a_raw,
+                        $option_b_raw,
+                        $option_c_prepared,
+                        $option_d_prepared,
+                        $correct_option_raw
+                    );
 
-                if ($result) {
-                    $response['status'] = 0;
-                    $response['message'] = 'Question added successfully.';
-                    // Optionally, return the ID of the newly added question
-                    // $response['question_id'] = mysqli_insert_id($conn);
+                    if (mysqli_stmt_execute($stmt)) {
+                        $response['status'] = 0;
+                        $response['message'] = 'Question added successfully.';
+                        $response['question_id'] = mysqli_insert_id($conn);
+                    } else {
+                        $response['status'] = 1;
+                        $response['message'] = 'Error adding question: ' . mysqli_stmt_error($stmt);
+                    }
+                    mysqli_stmt_close($stmt);
                 } else {
                     $response['status'] = 1;
-                    $response['message'] = 'Error adding question: ' . mysqli_error($conn);
+                    $response['message'] = 'Database statement preparation error: ' . mysqli_error($conn);
                 }
             }
-        } else {
-            $empty_sanitized_fields = [];
-            if (empty($quiz_id)) $empty_sanitized_fields[] = 'quiz_id';
-            if (empty($question_text)) $empty_sanitized_fields[] = 'question_text';
-            if (empty($option_a)) $empty_sanitized_fields[] = 'option_a';
-            if (empty($option_b)) $empty_sanitized_fields[] = 'option_b';
-            if (empty($correct_option)) $empty_sanitized_fields[] = 'correct_option';
-
-            $response['status'] = 1;
-            $response['message'] = 'Required fields cannot be empty after sanitization: ' . implode(', ', $empty_sanitized_fields);
         }
     } else {
         $response['status'] = 1;
