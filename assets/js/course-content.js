@@ -54,7 +54,7 @@ async function getCourseContent() {
 
   try {
     // Fetch main course content
-    const contentResponse = await fetch(`${APP_URL}backend/student/get-course-content.php?courseId=${COURSE_ID}`);
+    const contentResponse = await fetch(`${APP_URL}student/get-course-content.php?courseId=${COURSE_ID}`);
     if (!contentResponse.ok) throw new Error(`HTTP error fetching content! status: ${contentResponse.status}`);
     const contentData = await contentResponse.json();
     if (contentData.status !== 0 || !contentData.course_contents) {
@@ -65,7 +65,7 @@ async function getCourseContent() {
 
     // Fetch course progress
     try {
-        const progressResponse = await fetch(`${APP_URL}backend/student/get_course_progress.php?student_id=${USER_ID}&course_id=${COURSE_ID}`);
+        const progressResponse = await fetch(`${APP_URL}student/get_course_progress.php?student_id=${USER_ID}&course_id=${COURSE_ID}`);
         if (!progressResponse.ok) console.warn(`HTTP error fetching progress! status: ${progressResponse.status}`);
         else {
             const progressData = await progressResponse.json();
@@ -291,7 +291,7 @@ async function updateAndPersistContentProgress(contentId, contentType, newPositi
                 completed_status: newCompletedStatus,
                 last_position: lastPositionString
             };
-            const response = await fetch(`${APP_URL}backend/student/update_content_progress.php`, {
+            const response = await fetch(`${APP_URL}student/update_content_progress.php`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -367,7 +367,7 @@ function checkAndDisplayCertificateButton(overallPercentage) {
 
     if (overallPercentage >= 80) {
         const configureAndShow = () => {
-            getCertificateBtnEl.href = `${APP_URL}backend/student/generate_certificate.php?course_id=${COURSE_ID}&student_id=${USER_ID}`;
+            getCertificateBtnEl.href = `${APP_URL}student/generate_certificate.php?course_id=${COURSE_ID}&student_id=${USER_ID}`;
             const fee = parseFloat(courseDetails.certificate_fee);
             if (fee > 0) {
                 certificateFeeDisplayEl.textContent = `(Fee: $${fee.toFixed(2)})`;

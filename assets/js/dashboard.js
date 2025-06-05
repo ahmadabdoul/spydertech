@@ -269,7 +269,7 @@ async function fetchUserProfile() {
         return;
     }
     try {
-        const response = await fetch(`${url}backend/student/get_user_profile.php?student_id=${user_id}`);
+        const response = await fetch(`${url}student/get_user_profile.php?student_id=${user_id}`);
         if (!response.ok) {
             console.error(`HTTP error! status: ${response.status}`);
             return;
@@ -337,7 +337,7 @@ async function listActiveCourse() {
             // Certificate Link Logic
             if (item.completion_status === 'Completed') {
                 const certificateLink = document.createElement('a');
-                certificateLink.href = `${url}backend/student/generate_certificate.php?course_id=${item.course_id}&student_id=${user_id}`;
+                certificateLink.href = `${url}student/generate_certificate.php?course_id=${item.course_id}&student_id=${user_id}`;
                 certificateLink.target = "_blank";
                 certificateLink.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'mt-1');
 
