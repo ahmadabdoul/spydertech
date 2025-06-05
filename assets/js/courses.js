@@ -1,125 +1,187 @@
 const url = localStorage.getItem('url');
+const APP_URL = localStorage.getItem('url') || ''; // Consistent APP_URL definition
+
+// Function to get current user's enrolled course IDs
+async function getEnrolledCourseIds(userId) {
+    if (!userId) return new Set(); // Return an empty set if no userId
+    try {
+        const response = await fetch(`${APP_URL}student/get-student-courses.php?id=${userId}`);
+        if (!response.ok) {
+            console.error('Failed to fetch student courses:', response.status);
+            return new Set();
+        }
+        const resData = await response.json();
+        if (resData.status === 0 && resData.courses) {
+            const enrolledIds = new Set();
+            resData.courses.forEach(course => enrolledIds.add(String(course.course_id))); // Ensure course_id is string for comparison
+            return enrolledIds;
+        }
+        return new Set();
+    } catch (error) {
+        console.error('Error fetching enrolled courses:', error);
+        return new Set();
+    }
+}
 
 async function listCourses() {
+  let currentUserId = null;
   try {
-    const response = await fetch(`${url}student/list-courses.php?limit=4`);
+    const userSession = sessionStorage.getItem('user');
+    if (userSession) {
+        const user = JSON.parse(userSession);
+        currentUserId = user.id;
+    }
+
+    const enrolledCourseIds = await getEnrolledCourseIds(currentUserId);
+
+    // Fetch all courses to list
+    const response = await fetch(`${APP_URL}student/list-courses.php?limit=100`); // Increased limit or implement pagination later
+    if (!response.ok) {
+        throw new Error(`Failed to fetch courses: ${response.status}`);
+    }
     const resData = await response.json();
+    if (resData.status !== 0 || !resData.courses) {
+        throw new Error(resData.message || 'No courses found or error in response.');
+    }
     const courses = resData.courses;
 
-    // Create the table element
+    const tableContainer = document.getElementById('tableContainer');
+    if (!tableContainer) {
+      console.error("DOM element 'tableContainer' not found.");
+      return;
+    }
+    tableContainer.innerHTML = ''; // Clear previous table
+
     const table = document.createElement('table');
     table.id = 'coursesTable';
+    table.classList.add('table', 'table-striped');
 
-    // Create the table header
     const thead = document.createElement('thead');
-    // Define the table header column names
+    const headerRow = document.createElement('tr');
     const headers = [
-      'ID',
-      'Title',
-      'Description',
-      'Teacher Username',
-      'Enrollment Fee',
-      'Certificate Fee',
-      'Actions',
+      'ID', 'Title', 'Description', 'Teacher',
+      'Enroll Fee', 'Cert. Fee', 'Actions'
     ];
-
-    headers.forEach((header) => {
+    headers.forEach(headerText => {
       const th = document.createElement('th');
-      th.textContent = header;
-      thead.appendChild(th);
+      th.textContent = headerText;
+      headerRow.appendChild(th);
     });
-
+    thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    // Create the table body
     const tbody = document.createElement('tbody');
+    if (courses.length === 0) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = headers.length;
+        cell.textContent = 'No courses available at the moment.';
+        cell.style.textAlign = 'center';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+    } else {
+        courses.forEach(course => {
+          const { id, title, description, teacher_username, enrollment_fee, certificate_fee } = course;
+          const courseIdStr = String(id); // Ensure course ID is string for comparison
 
-    courses.forEach((course) => {
-      const { id, title, description, teacher_username, enrollment_fee, certificate_fee } = course;
+          const row = document.createElement('tr');
+          row.insertCell().textContent = id;
+          row.insertCell().textContent = title;
+          const descCell = row.insertCell();
+          descCell.textContent = description.length > 50 ? description.substring(0, 50) + '...' : description;
+          descCell.title = description; // Show full description on hover
+          row.insertCell().textContent = teacher_username;
 
-      const row = document.createElement('tr');
-      const idCell = document.createElement('td');
-      const titleCell = document.createElement('td');
-      const descriptionCell = document.createElement('td');
-      const teacherCell = document.createElement('td');
-      const enrollmentFeeCell = document.createElement('td');
-      const certificateFeeCell = document.createElement('td');
-      const actionsCell = document.createElement('td');
+          const parsedEnrollmentFee = parseFloat(enrollment_fee);
+          row.insertCell().textContent = parsedEnrollmentFee > 0 ? '$' + parsedEnrollmentFee.toFixed(2) : 'Free';
 
-      idCell.textContent = id;
-      titleCell.textContent = title;
-      descriptionCell.textContent = description;
-      teacherCell.textContent = teacher_username;
+          const parsedCertificateFee = parseFloat(certificate_fee);
+          row.insertCell().textContent = parsedCertificateFee > 0 ? '$' + parsedCertificateFee.toFixed(2) : 'Free';
 
-      // Format and set fee information
-      const parsedEnrollmentFee = parseFloat(enrollment_fee);
-      enrollmentFeeCell.textContent = parsedEnrollmentFee > 0 ? '$' + parsedEnrollmentFee.toFixed(2) : 'Free';
+          const actionsCell = row.insertCell();
 
-      const parsedCertificateFee = parseFloat(certificate_fee);
-      certificateFeeCell.textContent = parsedCertificateFee > 0 ? '$' + parsedCertificateFee.toFixed(2) : 'Free';
-
-      row.appendChild(idCell);
-      row.appendChild(titleCell);
-      row.appendChild(descriptionCell);
-      row.appendChild(teacherCell);
-      row.appendChild(enrollmentFeeCell);
-      row.appendChild(certificateFeeCell);
-
-      // Create the action button for enrollment
-      const enrollButton = document.createElement('button');
-      enrollButton.classList.add('btn');
-      enrollButton.classList.add('btn-primary');
-      enrollButton.textContent = 'Enroll/Follow';
-      enrollButton.addEventListener('click', () => {
-        enrollCourse(id); // Replace enrollCourse with your enrollment function
-      });
-
-      actionsCell.appendChild(enrollButton);
-      row.appendChild(actionsCell);
-
-      tbody.appendChild(row);
-    });
-
+          if (enrolledCourseIds.has(courseIdStr)) {
+            const viewButton = document.createElement('a');
+            viewButton.classList.add('btn', 'btn-info', 'btn-sm');
+            viewButton.textContent = 'View Course';
+            viewButton.href = `course-content.html?course=${id}`;
+            actionsCell.appendChild(viewButton);
+          } else {
+            const enrollButton = document.createElement('button');
+            enrollButton.classList.add('btn', 'btn-primary', 'btn-sm');
+            enrollButton.textContent = 'Enroll'; // Changed from 'Enroll/Follow'
+            enrollButton.addEventListener('click', () => {
+              enrollCourse(id);
+            });
+            actionsCell.appendChild(enrollButton);
+          }
+          tbody.appendChild(row);
+        });
+    }
     table.appendChild(tbody);
-
-    // Append the table to the desired element in your HTML file
-    const tableContainer = document.getElementById('tableContainer');
     tableContainer.appendChild(table);
 
-    // Initialize DataTables without jQuery
-    const dataTable = new simpleDatatables.DataTable(table);
+    if (typeof simpleDatatables !== 'undefined') {
+      new simpleDatatables.DataTable(table);
+    } else {
+      console.warn('simpleDatatables library not found.');
+    }
+
   } catch (error) {
-    console.log(error);
+    console.error('Error in listCourses:', error);
+    const tableContainer = document.getElementById('tableContainer');
+    if (tableContainer) {
+        tableContainer.innerHTML = `<p class='text-danger'>Could not load courses: ${error.message}</p>`;
+    }
   }
 }
 
-showloader();
-listCourses();
-hideloader();
-async function enrollCourse(course) {
-  courseId = course;
-  user = sessionStorage.getItem('user');
-  user = JSON.parse(user);
+async function enrollCourse(courseId) {
+  const userSession = sessionStorage.getItem('user');
+  if (!userSession) {
+    swal('Not Logged In', 'You need to be logged in to enroll.', 'warning');
+    return;
+  }
+  const user = JSON.parse(userSession);
+  const userId = user.id;
 
-  userId = user.id;
   showloader();
-  data = {
+  const data = {
     courseId: courseId,
-    userId: userId,
+    userId: userId, // Changed from 'userId' to 'userId' to match typical var naming, backend expects userId
   };
-  const response = await fetch(`${url}student/enroll-course.php`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-  const resData = await response.json();
 
-  hideloader();
-  if (resData.status === 0) {
-    swal('Success', resData.message, 'success');
-  } else {
-    swal('Error', resData.message, 'error');
+  try {
+    const response = await fetch(`${APP_URL}student/enroll-course.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    const resData = await response.json();
+
+    if (resData.status === 0) {
+      swal('Success', resData.message, 'success').then(() => {
+        listCourses(); // Refresh the list to show the updated button state
+      });
+    } else {
+      swal('Error', resData.message, 'error');
+    }
+  } catch (error) {
+    console.error('Enrollment request failed:', error);
+    swal('Error', 'An error occurred during enrollment. Please try again.', 'error');
+  } finally {
+    hideloader();
   }
 }
+
+// Initial load
+document.addEventListener('DOMContentLoaded', () => {
+  showloader();
+  listCourses().then(() => {
+    hideloader();
+  }).catch(() => {
+    hideloader(); // Ensure loader is hidden even on error
+  });
+});
