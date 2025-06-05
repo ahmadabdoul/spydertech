@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LMS Register</title>
+    <title>LMS </title>
     <link
       rel="shortcut icon"
       type="image/png"
@@ -55,53 +55,16 @@
               <div class="card mb-0">
                 <div class="card-body">
                   <h4 class="text-center">Learning Management System</h4>
-                  <form class="inputForms">
-                    <div class="mb-3">
-                      <label for="exampleInputtext1" class="form-label"
-                        >Name</label
-                      >
-                      <input
-                        type="text"
-                        name="name"
-                        class="form-control"
-                        id="Inputtext1"
-                        aria-describedby="textHelp"
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label for="exampleInputEmail1" class="form-label"
-                        >Email Address</label
-                      >
-                      <input
-                        type="email"
-                        name="email"
-                        class="form-control"
-                        id="InputEmail1"
-                        aria-describedby="emailHelp"
-                      />
-                    </div>
+                  <form class="loginForm">
                     <div class="mb-3">
                       <label for="exampleInputEmail1" class="form-label"
                         >Username</label
                       >
                       <input
                         type="text"
-                        name="username"
                         class="form-control"
-                        id="username"
+                        id="InputUsername"
                         aria-describedby="username"
-                      />
-                    </div>
-                    <div class="mb-3">
-                      <label for="exampleInputEmail1" class="form-label"
-                        >Phone Number</label
-                      >
-                      <input
-                        type="number"
-                        name="phoneNumber"
-                        class="form-control"
-                        id="InputNumber"
-                        aria-describedby="emailHelp"
                       />
                     </div>
                     <div class="mb-4">
@@ -110,15 +73,15 @@
                       >
                       <input
                         type="password"
-                        name="password"
                         class="form-control"
-                        id="InputPassword1"
+                        id="InputPassword"
                       />
                     </div>
                     <div class="mb-4">
                       <label for="exampleInputPassword1" class="form-label"
                         >Role</label
                       >
+
                       <select
                         class="form-control"
                         name="selectMenu"
@@ -128,18 +91,20 @@
                         <option value="Teacher">Teacher</option>
                       </select>
                     </div>
-
                     <button
+                      href="./index.html"
                       class="btn btn-primary w-100 py-8 fs-4 mb-4 rounded-2"
                     >
-                      Sign Up
+                      Sign In
                     </button>
                     <div
                       class="d-flex align-items-center justify-content-center"
                     >
-                      <p class="fs-4 mb-0 fw-bold">Already have an Account?</p>
-                      <a class="text-primary fw-bold ms-2" href="./authentication-login.html"
-                        >Sign In</a
+                      <p class="fs-3 mb-0 fw-bold">Don't have an account?</p>
+                      <a
+                        class="text-primary fw-bold ms-2"
+                        href="./authentication-register.html"
+                        >Create an account</a
                       >
                     </div>
                     <div class="custom-loader"></div>
@@ -151,12 +116,13 @@
         </div>
       </div>
     </div>
+    <script>
+      localStorage.setItem('url', '../backend/');
+    </script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-   
     <script src="assets/libs/jquery/dist/jquery.min.js"></script>
     <script src="assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-        <script src="assets/js/loader.js"></script>
-    <script src="assets/js/register.js"></script>
+    <script src="assets/js/loader.js"></script>
+    <script src="assets/js/login.js"></script>
   </body>
 </html>

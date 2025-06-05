@@ -3,6 +3,6 @@
 $servername = 'localhost';
 $username = "root";
 $password = "";
-$dbname = "lms";
+$dbname = "spydertech";
 
 $conn = mysqli_connect($servername, $username, $password, $dbname) or die("Error connecting to mysql server");
