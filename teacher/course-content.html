@@ -313,13 +313,16 @@
           </div>
           <div class="row">
             <div class="card-body">
-                <h5 class="card-title fw-semibold mb-4">Course Contents</h5>
-                <div class="card">
-                  <div id="course_contents" class="card-body">
-                   
-                  </div>
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="card-title fw-semibold">Course Contents</h5>
+                <button id="addContentBtn" class="btn btn-primary">Add New Content</button>
+              </div>
+              <div class="card">
+                <div id="course_contents" class="card-body">
+                  <!-- Course content will be dynamically loaded here -->
                 </div>
               </div>
+            </div>
           </div>
           <div class="row">
             <div class="card-body">
@@ -353,7 +356,55 @@
     <script src="../assets/js/updatepp.js"></script>
     <script src="../assets/js/validate-login.js"></script>
     <script src="../assets/js/logout.js"></script>
-  
-    
+
+    <!-- Add Content Modal -->
+    <div class="modal fade" id="addContentModal" tabindex="-1" aria-labelledby="addContentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addContentModalLabel">Add New Course Content</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="addContentForm" enctype="multipart/form-data">
+              <input type="hidden" id="contentId" name="contentId">
+              <div class="mb-3">
+                <label for="chapterTitle" class="form-label">Chapter Title</label>
+                <input type="text" class="form-control" id="chapterTitle" name="chapter_title" required>
+              </div>
+              <div class="mb-3">
+                <label for="lessonTitle" class="form-label">Lesson Title</label>
+                <input type="text" class="form-control" id="lessonTitle" name="title" required>
+              </div>
+              <div class="mb-3">
+                <label for="contentType" class="form-label">Content Type</label>
+                <select class="form-control" id="contentType" name="video_type">
+                  <option value="">Select Content Type</option>
+                  <option value="text">Text</option>
+                  <option value="file">Video File</option>
+                  <option value="url">Video URL</option>
+                </select>
+              </div>
+              <div id="textContent" class="mb-3" style="display: none;">
+                <label for="textContentArea" class="form-label">Text Content</label>
+                <textarea class="form-control" id="textContentArea" name="content" rows="5"></textarea>
+              </div>
+              <div id="videoUrl" class="mb-3" style="display: none;">
+                <label for="videoUrlInput" class="form-label">Video URL</label>
+                <input type="text" class="form-control" id="videoUrlInput" name="url">
+              </div>
+              <div id="videoFile" class="mb-3" style="display: none;">
+                <label for="videoFileInput" class="form-label">Video File</label>
+                <input type="file" class="form-control" id="videoFileInput" name="video">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveContentBtn">Save Content</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

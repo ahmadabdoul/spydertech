@@ -93,7 +93,7 @@ async function getCourseContent() {
     const chapterTitlesSet = new Set();
     if (allCourseContents && allCourseContents.length > 0) {
         allCourseContents.forEach(item => {
-            if(item.title) chapterTitlesSet.add(item.title.trim());
+            if(item.chapter_title) chapterTitlesSet.add(item.chapter_title.trim());
         });
         chapters = Array.from(chapterTitlesSet).filter(title => title);
     }

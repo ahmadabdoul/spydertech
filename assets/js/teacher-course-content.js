@@ -2,12 +2,13 @@ const url = localStorage.getItem('url');
 let user = sessionStorage.getItem('user');
 user = JSON.parse(user);
 
+let courseContents = [];
+
 $(document).ready(function () {
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get('id');
   let title = '';
   let description = '';
-  let courseContents = [];
   let students = [];
   let students_count = [];
   let completionRate = '';
@@ -72,12 +73,7 @@ async function getCourse(id) {
       $('#description').html(description);
 
       // Populate course contents
-      const contentsList = $('#course_contents');
-      contentsList.empty();
-      courseContents.forEach((content, index) => {
-        const listItem = $('<li></li>').text(`${index + 1}. ${content.title}`);
-        contentsList.append(listItem);
-      });
+      renderCourseContents(courseContents);
 
       // Create table for student list
       const studentsTable = $('<table>').addClass('table').attr('id', 'students_table');
@@ -106,3 +102,166 @@ async function getCourse(id) {
     hideloader();
   }
 }
+
+function renderCourseContents(contents) {
+  const contentsContainer = $('#course_contents');
+  contentsContainer.empty();
+
+  if (contents.length === 0) {
+    contentsContainer.html('<p>No content has been added to this course yet.</p>');
+    return;
+  }
+
+  const table = $('<table>').addClass('table');
+  const thead = $('<thead>').appendTo(table);
+  const tbody = $('<tbody>').appendTo(table);
+
+  const headRow = $('<tr>').appendTo(thead);
+  $('<th>').text('Chapter').appendTo(headRow);
+  $('<th>').text('Lesson Title').appendTo(headRow);
+  $('<th>').text('Content Type').appendTo(headRow);
+  $('<th>').text('Actions').appendTo(headRow);
+
+  contents.forEach(content => {
+    const row = $('<tr>').appendTo(tbody);
+    $('<td>').text(content.chapter_title).appendTo(row);
+    $('<td>').text(content.title).appendTo(row);
+    $('<td>').text(content.video_type || 'text').appendTo(row);
+    const actionsCell = $('<td>').appendTo(row);
+    $('<button>').addClass('btn btn-sm btn-info me-2 edit-btn').text('Edit').data('id', content.id).appendTo(actionsCell);
+    $('<button>').addClass('btn btn-sm btn-danger delete-btn').text('Delete').data('id', content.id).appendTo(actionsCell);
+  });
+
+  contentsContainer.append(table);
+}
+
+$('#addContentBtn').click(function () {
+  $('#addContentModal').modal('show');
+});
+
+$('#contentType').change(function () {
+  const selectedType = $(this).val();
+  $('#textContent, #videoUrl, #videoFile').hide();
+  if (selectedType === 'text') {
+    $('#textContent').show();
+  } else if (selectedType === 'url') {
+    $('#videoUrl').show();
+  } else if (selectedType === 'file') {
+    $('#videoFile').show();
+  }
+});
+
+$('#saveContentBtn').click(async function () {
+  const urlParams = new URLSearchParams(window.location.search);
+  const courseId = urlParams.get('id');
+  const form = $('#addContentForm')[0];
+  const formData = new FormData(form);
+  formData.append('course_id', courseId);
+
+  const contentId = $('#contentId').val();
+  const endpoint = contentId ? 'update-course-content.php' : 'upload-course-content.php';
+  if(contentId) formData.append('id', contentId);
+
+  try {
+    showloader();
+    const response = await fetch(`${url}teacher/${endpoint}`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const resData = await response.json();
+
+    if (resData.status === 0) {
+      swal('Success', resData.message, 'success');
+      $('#addContentModal').modal('hide');
+      getCourse(courseId); // Refresh the course content
+    } else {
+      swal('Oops', resData.message, 'error');
+    }
+  } catch (error) {
+    swal('Error', error.message, 'error');
+  } finally {
+    hideloader();
+  }
+});
+
+$(document).on('click', '.edit-btn', function () {
+    const contentId = $(this).data('id');
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('id');
+
+    // We need to get the full course contents array.
+    // A simple way is to fetch it again or use a global variable if it's stored.
+    // Assuming `courseContents` is available in the scope.
+    const content = courseContents.find(c => c.id == contentId);
+
+    if (content) {
+        $('#contentId').val(content.id);
+        $('#chapterTitle').val(content.chapter_title);
+        $('#lessonTitle').val(content.title);
+        $('#contentType').val(content.video_type || 'text');
+        $('#contentType').trigger('change');
+        $('#textContentArea').val(content.content);
+        $('#videoUrlInput').val(content.video_url);
+
+        $('#addContentModalLabel').text('Edit Course Content');
+        $('#addContentModal').modal('show');
+    }
+});
+
+$('#addContentModal').on('show.bs.modal', function (event) {
+    const button = $(event.relatedTarget); // Button that triggered the modal
+    const action = button.data('action'); // Extract info from data-* attributes
+
+    if (action === 'add') {
+        $('#addContentForm')[0].reset();
+        $('#contentId').val('');
+        $('#addContentModalLabel').text('Add New Course Content');
+    }
+});
+
+$('#addContentBtn').click(function () {
+    $('#addContentModal').data('action', 'add').modal('show');
+});
+
+$(document).on('click', '.delete-btn', function () {
+    const contentId = $(this).data('id');
+    swal({
+        title: "Are you sure?",
+        text: "Once deleted, you will not be able to recover this content!",
+        icon: "warning",
+        buttons: true,
+        dangerMode: true,
+    })
+    .then(async (willDelete) => {
+        if (willDelete) {
+            try {
+                showloader();
+                const response = await fetch(`${url}teacher/delete-course-content.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: contentId })
+                });
+
+                const resData = await response.json();
+
+                if (resData.status === 0) {
+                    swal("Poof! The content has been deleted!", {
+                        icon: "success",
+                    });
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const courseId = urlParams.get('id');
+                    getCourse(courseId); // Refresh the course content
+                } else {
+                    swal('Oops', resData.message, 'error');
+                }
+            } catch (error) {
+                swal('Error', error.message, 'error');
+            } finally {
+                hideloader();
+            }
+        }
+    });
+});
