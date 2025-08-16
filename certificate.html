@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Completion Certificate - Spydertech LMS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --navy-brand: #0D2440;
+            --burnt-orange: #C75A1E;
+            --bright-cyan: #2FB6D6;
+            --success-green: #6BBB44;
+            --white: #FFFFFF;
+            --surface-light: #F6F7F9;
+            --text-dark-gray: #4A5561;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-light);
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .certificate-container {
+            background: var(--white);
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1.414;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(13, 36, 64, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .certificate-border {
+            position: absolute;
+            inset: 20px;
+            border: 3px solid var(--burnt-orange);
+            border-radius: 4px;
+        }
+
+        .certificate-content {
+            position: relative;
+            height: 100%;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .certificate-header {
+            margin-bottom: 40px;
+        }
+
+        .certificate-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--navy-brand), var(--bright-cyan));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(13, 36, 64, 0.2);
+        }
+
+        .certificate-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--navy-brand);
+            margin-bottom: 10px;
+        }
+
+        .certificate-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-dark-gray);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .certificate-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin: 40px 0;
+        }
+
+        .certificate-text {
+            font-size: 1.2rem;
+            color: var(--text-dark-gray);
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .student-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--navy-brand);
+            margin: 20px 0;
+            border-bottom: 2px solid var(--burnt-orange);
+            display: inline-block;
+        }
+
+        .course-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--burnt-orange);
+            margin: 20px 0;
+            font-style: italic;
+        }
+
+        .completion-details {
+            font-size: 1rem;
+            color: var(--text-dark-gray);
+            margin-top: 30px;
+        }
+
+        .certificate-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-top: 40px;
+        }
+
+        .signature-section {
+            text-align: center;
+            flex: 1;
+        }
+
+        .signature-line {
+            width: 200px;
+            height: 2px;
+            background: var(--text-dark-gray);
+            margin: 0 auto 10px;
+        }
+
+        .signature-title {
+            font-size: 0.9rem;
+            color: var(--text-dark-gray);
+            font-weight: 500;
+        }
+
+        .certificate-seal {
+            position: absolute;
+            bottom: 60px;
+            right: 60px;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--success-green), #5ca83a);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(107, 187, 68, 0.3);
+            border: 4px solid var(--white);
+        }
+
+        .certificate-id {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.8rem;
+            color: var(--text-dark-gray);
+            font-family: 'Courier New', monospace;
+        }
+
+        .certificate-date {
+            position: absolute;
+            bottom: 20px;
+            right: 140px;
+            font-size: 0.9rem;
+            color: var(--text-dark-gray);
+            font-weight: 500;
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .certificate-container { box-shadow: none; border-radius: 0; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="certificate-container" id="certificate">
+        <div class="certificate-border"></div>
+        
+        <div class="certificate-content">
+            <div class="certificate-header">
+                <div class="certificate-logo">
+                    <i class="fas fa-graduation-cap" style="font-size: 2.5rem; color: white;"></i>
+                </div>
+                <h1 class="certificate-title">Certificate of Completion</h1>
+                <p class="certificate-subtitle">Spydertech Learning Management System</p>
+            </div>
+
+            <div class="certificate-body">
+                <p class="certificate-text">This is to certify that</p>
+                <div class="student-name" id="studentName">[Student Name]</div>
+                <p class="certificate-text">has successfully completed the course</p>
+                <div class="course-name" id="courseName">[Course Title]</div>
+                <div class="completion-details">
+                    <p>Completed on <strong id="completionDate">[Date]</strong></p>
+                    <p>Achievement Score: <strong id="completionScore">80</strong>%</p>
+                </div>
+            </div>
+
+            <div class="certificate-footer">
+                <div class="signature-section">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">Director of Education</div>
+                </div>
+                <div class="signature-section">
+                    <div class="signature-line"></div>
+                    <div class="signature-title">Chief Executive Officer</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="certificate-seal">
+            <i class="fas fa-medal" style="font-size: 2rem; color: white;"></i>
+        </div>
+        
+        <div class="certificate-id" id="certificateId">Certificate ID: SPYTECH-[ID]</div>
+        <div class="certificate-date" id="issuedDate">Issued: [Date]</div>
+    </div>
+
+    <script>
+        // Certificate generation functionality
+        function generateCertificate() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentName = urlParams.get('student') || 'Student Name';
+            const courseName = urlParams.get('course') || 'Course Title';
+            const completionScore = urlParams.get('score') || '80';
+            const completionDate = urlParams.get('date') || formatDate(new Date());
+            const certificateId = generateCertificateId();
+
+            document.getElementById('studentName').textContent = studentName;
+            document.getElementById('courseName').textContent = courseName;
+            document.getElementById('completionScore').textContent = completionScore;
+            document.getElementById('completionDate').textContent = completionDate;
+            document.getElementById('certificateId').textContent = `Certificate ID: ${certificateId}`;
+            document.getElementById('issuedDate').textContent = `Issued: ${formatDate(new Date())}`;
+
+            document.title = `Certificate - ${studentName} - ${courseName}`;
+        }
+
+        function generateCertificateId() {
+            const prefix = 'SPYTECH';
+            const timestamp = Date.now().toString(36).toUpperCase();
+            const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+            return `${prefix}-${timestamp}-${random}`;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Initialize certificate when page loads
+        generateCertificate();
+
+        // Print functionality
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+        });
+
+        console.log('Certificate generated successfully!');
+    </script>
+</body>
+</html>

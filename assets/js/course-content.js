@@ -60,8 +60,7 @@ async function getCourseContent() {
     if (contentData.status !== 0 || !contentData.course_contents) {
         throw new Error(contentData.message || 'Failed to fetch course content.');
     }
-    const allCourseContents = contentData.course_contents;
-    console.log(allCourseContents)
+    allCourseContents = contentData.course_contents;
     courseDetails = contentData.course_details; // Store course details, should include certificate_fee
 
     // Fetch course progress
@@ -93,7 +92,7 @@ async function getCourseContent() {
     const chapterTitlesSet = new Set();
     if (allCourseContents && allCourseContents.length > 0) {
         allCourseContents.forEach(item => {
-            if(item.title) chapterTitlesSet.add(item.title.trim());
+            if(item.chapter_title) chapterTitlesSet.add(item.chapter_title.trim());
         });
         chapters = Array.from(chapterTitlesSet).filter(title => title);
     }
