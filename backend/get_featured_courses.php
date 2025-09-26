@@ -3,11 +3,8 @@
 header('Content-Type: application/json');
 
 // Include dependencies
-// Assuming 'backend' and 'assets' are sibling folders at the project root
-require_once '../assets/connection.php';
-// inject.php might not be strictly needed if no string sanitization is occurring,
-// but including for consistency if it contains other essential functions or settings.
-require_once '../assets/inject.php';
+require_once 'assets/connection.php';
+require_once 'assets/inject.php';
 
 // Initialize variables
 $response = array();
