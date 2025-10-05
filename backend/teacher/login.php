@@ -36,7 +36,17 @@ if (empty($username) || empty($password)) {
       // Login successful
       $response['status'] = 0;
       $response['message'] = 'Login successful.';
-      $response['user'] = $row;
+      // Manually build the user array to ensure all required fields are present and the password hash is excluded
+      $response['user'] = array(
+        'id' => $row['id'],
+        'name' => $row['name'],
+        'username' => $row['username'],
+        'email' => $row['email'],
+        'cellphone' => $row['cellphone'],
+        'avatar' => $row['avatar'],
+        'wallet_balance' => $row['wallet_balance'],
+        'revenue_percentage' => $row['revenue_percentage']
+      );
     } else {
       // Invalid password
       $response['status'] = 1;
