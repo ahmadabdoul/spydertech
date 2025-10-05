@@ -4,6 +4,9 @@ user = JSON.parse(user);
 console.log(user);
 
 $(document).ready(function () {
+    if (user && typeof user.wallet_balance !== 'undefined') {
+        $('#walletBalance').text(`$${parseFloat(user.wallet_balance).toFixed(2)}`);
+    }
     fetchCourses();
     $('input[name="videoType"]').change(function () {
         let videoType = $(this).val();

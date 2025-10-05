@@ -22,7 +22,9 @@ if (isset($_GET['id'])) {
         $response['teacher'] = array(
             'id' => $teacher['id'],
             'username' => $teacher['username'],
-            'email' => $teacher['email']
+            'email' => $teacher['email'],
+            'wallet_balance' => $teacher['wallet_balance'],
+            'revenue_percentage' => $teacher['revenue_percentage']
         );
 
         // Retrieve the courses taught by the teacher
