@@ -92,24 +92,34 @@ async function getCourseContent() {
     const chapterTitlesSet = new Set();
     if (allCourseContents && allCourseContents.length > 0) {
         allCourseContents.forEach(item => {
-            if(item.chapter_title) chapterTitlesSet.add(item.chapter_title.trim());
+            if (item.chapter_title) {
+                chapterTitlesSet.add(item.chapter_title.trim());
+            }
         });
         chapters = Array.from(chapterTitlesSet).filter(title => title);
+
+        // If no chapters were found, but content exists, create a default chapter.
+        if (chapters.length === 0) {
+            chapters.push('General');
+            // Assign all content to this default chapter
+            allCourseContents.forEach(content => content.chapter_title = 'General');
+        }
     }
 
     populateChapterSidebar();
     loadQuestionAnswers(contentData.questions_answers || []);
 
     if (chapters.length > 0) {
-      displayChapter(0);
+        displayChapter(0);
     } else {
-      if(chapterSidebarListEl) chapterSidebarListEl.innerHTML = '<li class="list-group-item">No chapters available.</li>';
-      if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = '<p>This course has no content organized into chapters yet.</p>';
-      if(selectedChapterContentTitleEl) selectedChapterContentTitleEl.textContent = 'No Content';
-      if(currentChapterDisplayEl) currentChapterDisplayEl.textContent = 'N/A';
-      if(prevChapterBtnEl) prevChapterBtnEl.disabled = true;
-      if(nextChapterBtnEl) nextChapterBtnEl.disabled = true;
-      if(certificateSectionEl) certificateSectionEl.style.display = 'none';
+        // This 'else' block now only runs if there is truly no content.
+        if(chapterSidebarListEl) chapterSidebarListEl.innerHTML = '<li class="list-group-item">No chapters available.</li>';
+        if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = '<p>This course has no content organized into chapters yet.</p>';
+        if(selectedChapterContentTitleEl) selectedChapterContentTitleEl.textContent = 'No Content';
+        if(currentChapterDisplayEl) currentChapterDisplayEl.textContent = 'N/A';
+        if(prevChapterBtnEl) prevChapterBtnEl.disabled = true;
+        if(nextChapterBtnEl) nextChapterBtnEl.disabled = true;
+        if(certificateSectionEl) certificateSectionEl.style.display = 'none';
     }
 
     if(videoPlayerEl){
