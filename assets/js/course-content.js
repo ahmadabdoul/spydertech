@@ -1,19 +1,22 @@
-// Global state variables
-const APP_URL = localStorage.getItem('url') || ''; // Base URL for the application
+// --- Global State Variables ---
+const APP_URL = localStorage.getItem('url') || '';
 const LOGGED_IN_USER = JSON.parse(sessionStorage.getItem('user'));
 const USER_ID = LOGGED_IN_USER ? LOGGED_IN_USER.id : null;
 const URL_PARAMS = new URLSearchParams(window.location.search);
-const COURSE_ID = URL_PARAMS.get('course'); // This is the global course ID
+const COURSE_ID = URL_PARAMS.get('course');
 
-let allCourseContents = []; // To store all fetched content items for the course
-let courseDetails = null; // To store course-specific details like certificate_fee
-let chapters = []; // Array of unique chapter titles
-let currentChapterIndex = 0; // Index of the currently displayed chapter
-let currentContentItems = []; // Content items of the currently displayed chapter
-let userCourseProgress = {}; // Stores { content_id: { completed: bool, lastPosition: string, type: string } }
-let currentCourseEnrollmentStatus = ''; // Stores current enrollment/completion status for this course
+// Initialize from pre-loaded PHP data
+const { course_details, course_contents, chapters: phpChapters } = window.PHP_DATA || {};
+let allCourseContents = course_contents || [];
+let courseDetails = course_details || null;
+let chapters = phpChapters || [];
 
-// DOM Element References
+let currentChapterIndex = 0;
+let currentContentItems = [];
+let userCourseProgress = {}; // { content_id: { completed: bool, lastPosition: string, type: string } }
+let currentCourseEnrollmentStatus = '';
+
+// --- DOM Element References ---
 const courseTitleEl = document.getElementById('title');
 const currentChapterDisplayEl = document.getElementById('current-chapter-display');
 const chapterSidebarListEl = document.getElementById('chapter-sidebar-list');
@@ -23,14 +26,12 @@ const videoPlayerEl = document.querySelector('#content-item-display-area video')
 const descriptionEl = document.getElementById('description');
 const selectedChapterContentTitleEl = document.getElementById('selected-chapter-content-title');
 const contentItemsContainerEl = document.getElementById('chapters-container');
-
 const certificateSectionEl = document.getElementById('certificate-section');
 const getCertificateBtnEl = document.getElementById('get-certificate-btn');
 const certificateFeeDisplayEl = document.getElementById('certificate-fee-display');
 const courseProgressTextEl = document.getElementById('course-progress-text');
 
-
-// Debounce function
+// --- Helper Functions ---
 function debounce(func, delay) {
     let timeout;
     return function(...args) {
@@ -40,144 +41,117 @@ function debounce(func, delay) {
 }
 
 // --- Core Logic ---
-async function getCourseContent() {
-  if (!COURSE_ID) {
-    if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>Course ID not found in URL.</p>";
-    if(certificateSectionEl) certificateSectionEl.style.display = 'none';
-    return;
-  }
-  if (!USER_ID) {
-    if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>User not logged in.</p>";
-    if(certificateSectionEl) certificateSectionEl.style.display = 'none';
-    return;
-  }
-
-  try {
-    // Fetch main course content
-    const contentResponse = await fetch(`${APP_URL}student/get-course-content.php?courseId=${COURSE_ID}`);
-    if (!contentResponse.ok) throw new Error(`HTTP error fetching content! status: ${contentResponse.status}`);
-    const contentData = await contentResponse.json();
-    if (contentData.status !== 0 || !contentData.course_contents) {
-        throw new Error(contentData.message || 'Failed to fetch course content.');
+async function initializeCoursePage() {
+    if (!COURSE_ID || !USER_ID) {
+        if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>User or Course ID not found. Please log in and select a course.</p>";
+        if(certificateSectionEl) certificateSectionEl.style.display = 'none';
+        return;
     }
-    allCourseContents = contentData.course_contents;
-    courseDetails = contentData.course_details; // Store course details, should include certificate_fee
 
-    // Fetch course progress
+    if (!allCourseContents || !courseDetails) {
+        console.error("Course data not pre-loaded from PHP.");
+        if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>Could not load course data.</p>";
+        return;
+    }
+
+    // Fetch user-specific progress
     try {
         const progressResponse = await fetch(`${APP_URL}student/get_course_progress.php?student_id=${USER_ID}&course_id=${COURSE_ID}`);
-        if (!progressResponse.ok) console.warn(`HTTP error fetching progress! status: ${progressResponse.status}`);
-        else {
+        if (progressResponse.ok) {
             const progressData = await progressResponse.json();
             if (progressData.status === 0 && progressData.progress) {
                 progressData.progress.forEach(p => {
                     userCourseProgress[p.content_id] = {
                         completed: p.completed_status,
                         lastPosition: p.last_position,
-                        // type: p.type // Assuming backend might send type, otherwise infer in update function
                     };
                 });
-            } else if (progressData.status !== 0) {
-                console.warn("Could not fetch course progress:", progressData.message);
             }
+        } else {
+           console.warn(`HTTP error fetching progress! status: ${progressResponse.status}`);
         }
     } catch (error) {
         console.error("Error fetching course progress:", error);
     }
 
-    if (courseTitleEl && courseDetails) {
-        courseTitleEl.textContent = courseDetails.title;
-    }
+    // Add event listeners to dynamically generated elements
+    setupEventListeners();
 
-    const chapterTitlesSet = new Set();
-    if (allCourseContents && allCourseContents.length > 0) {
-        allCourseContents.forEach(item => {
-            if (item.chapter_title) {
-                chapterTitlesSet.add(item.chapter_title.trim());
-            }
+    // Set initial visual state based on fetched progress
+    updateAllVisuals();
+}
+
+function setupEventListeners() {
+    // Chapter selection from sidebar
+    document.querySelectorAll('#chapter-sidebar-list .list-group-item-action').forEach(li => {
+        li.addEventListener('click', () => {
+            const chapterIndex = parseInt(li.dataset.chapterIndex, 10);
+            displayChapter(chapterIndex);
         });
-        chapters = Array.from(chapterTitlesSet).filter(title => title);
+    });
 
-        // If no chapters were found, but content exists, create a default chapter.
-        if (chapters.length === 0) {
-            chapters.push('General');
-            // Assign all content to this default chapter
-            allCourseContents.forEach(content => content.chapter_title = 'General');
-        }
+    // Chapter navigation buttons
+    if (prevChapterBtnEl) {
+        prevChapterBtnEl.addEventListener('click', () => {
+            if (currentChapterIndex > 0) displayChapter(currentChapterIndex - 1);
+        });
+    }
+    if (nextChapterBtnEl) {
+        nextChapterBtnEl.addEventListener('click', () => {
+            if (currentChapterIndex < chapters.length - 1) displayChapter(currentChapterIndex + 1);
+        });
     }
 
-    populateChapterSidebar();
-    loadQuestionAnswers(contentData.questions_answers || []);
-
-    if (chapters.length > 0) {
-        displayChapter(0);
-    } else {
-        // This 'else' block now only runs if there is truly no content.
-        if(chapterSidebarListEl) chapterSidebarListEl.innerHTML = '<li class="list-group-item">No chapters available.</li>';
-        if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = '<p>This course has no content organized into chapters yet.</p>';
-        if(selectedChapterContentTitleEl) selectedChapterContentTitleEl.textContent = 'No Content';
-        if(currentChapterDisplayEl) currentChapterDisplayEl.textContent = 'N/A';
-        if(prevChapterBtnEl) prevChapterBtnEl.disabled = true;
-        if(nextChapterBtnEl) nextChapterBtnEl.disabled = true;
-        if(certificateSectionEl) certificateSectionEl.style.display = 'none';
-    }
-
-    if(videoPlayerEl){
+    // Video player listeners
+    if (videoPlayerEl) {
         videoPlayerEl.addEventListener('timeupdate', handleVideoTimeUpdate);
         videoPlayerEl.addEventListener('ended', handleVideoEnded);
     }
-    const initialProgress = calculateOverallCourseProgress();
-    checkAndDisplayCertificateButton(initialProgress);
 
-  } catch (error) {
-    console.error('Error in getCourseContent:', error);
-    if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = `<p class="text-danger">Could not load course content: ${error.message}</p>`;
-    if(certificateSectionEl) certificateSectionEl.style.display = 'none';
-  }
+    // Q&A submission form
+    const submitQuestionBtn = document.getElementById('submitQuestionBtn');
+    if (submitQuestionBtn) {
+        submitQuestionBtn.addEventListener('click', submitQuestion);
+    }
 }
 
-function populateChapterSidebar() {
-    if (!chapterSidebarListEl) return;
-    chapterSidebarListEl.innerHTML = '';
-    if (chapters.length === 0) {
-        chapterSidebarListEl.innerHTML = '<li class="list-group-item">No chapters defined.</li>';
-        return;
-    }
-    chapters.forEach((chapterTitle, index) => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item list-group-item-action';
-        li.style.cursor = 'pointer';
-        li.textContent = chapterTitle;
-        li.dataset.chapterIndex = index;
-        li.addEventListener('click', () => displayChapter(index));
-        chapterSidebarListEl.appendChild(li);
+function updateAllVisuals() {
+    allCourseContents.forEach(item => {
+        const progress = userCourseProgress[item.id];
+        if (progress) {
+            markListItemAsCompletedVisuals(item.id, progress.completed);
+        }
     });
+
+    const initialProgress = calculateOverallCourseProgress();
+    checkAndDisplayCertificateButton(initialProgress);
 }
 
 function displayChapter(chapterIndex) {
-  if (chapterIndex < 0 || chapterIndex >= chapters.length) return;
-  currentChapterIndex = chapterIndex;
-  const selectedChapterTitle = chapters[currentChapterIndex];
+    if (chapterIndex < 0 || chapterIndex >= chapters.length) return;
+    currentChapterIndex = chapterIndex;
+    const selectedChapterTitle = chapters[currentChapterIndex];
 
-  if(currentChapterDisplayEl) currentChapterDisplayEl.textContent = selectedChapterTitle;
-  if(selectedChapterContentTitleEl) selectedChapterContentTitleEl.textContent = `Content for: ${selectedChapterTitle}`;
+    if (currentChapterDisplayEl) currentChapterDisplayEl.textContent = selectedChapterTitle;
+    if (selectedChapterContentTitleEl) selectedChapterContentTitleEl.textContent = `Content for: ${selectedChapterTitle}`;
 
-  Array.from(chapterSidebarListEl.children).forEach((li, idx) => {
-    li.classList.toggle('active', idx === currentChapterIndex);
-  });
+    document.querySelectorAll('#chapter-sidebar-list .list-group-item-action').forEach((li, idx) => {
+        li.classList.toggle('active', idx === currentChapterIndex);
+    });
 
-  currentContentItems = allCourseContents.filter(item => item.chapter_title && item.chapter_title.trim() === selectedChapterTitle);
-  populateContentItemsList(currentContentItems);
+    currentContentItems = allCourseContents.filter(item => item.chapter_title && item.chapter_title.trim() === selectedChapterTitle);
+    populateContentItemsList(currentContentItems);
 
-  if (currentContentItems.length > 0) {
-    displayContentItem(currentContentItems[0]);
-  } else {
-    if(descriptionEl) descriptionEl.innerHTML = '<p>No content items in this chapter.</p>';
-    if(videoPlayerEl) { videoPlayerEl.style.display = 'none'; videoPlayerEl.src = ''; }
-  }
+    if (currentContentItems.length > 0) {
+        displayContentItem(currentContentItems[0]);
+    } else {
+        if (descriptionEl) descriptionEl.innerHTML = '<p>No content items in this chapter.</p>';
+        if (videoPlayerEl) { videoPlayerEl.style.display = 'none'; videoPlayerEl.src = ''; }
+        if (contentItemsContainerEl) contentItemsContainerEl.innerHTML = '<p class="list-group-item">This chapter has no content items yet.</p>';
+    }
 
-  if(prevChapterBtnEl) prevChapterBtnEl.disabled = currentChapterIndex === 0;
-  if(nextChapterBtnEl) nextChapterBtnEl.disabled = currentChapterIndex >= chapters.length - 1;
+    if (prevChapterBtnEl) prevChapterBtnEl.disabled = currentChapterIndex === 0;
+    if (nextChapterBtnEl) nextChapterBtnEl.disabled = currentChapterIndex >= chapters.length - 1;
 }
 
 function populateContentItemsList(items) {
@@ -224,7 +198,7 @@ function displayContentItem(contentItem) {
         }
         const scrollHandler = debounce(() => handleTextScroll(contentItem.id, descriptionEl), 250);
         descriptionEl.addEventListener('scroll', scrollHandler);
-        descriptionEl.clearCustomScrollListener = () => descriptionEl.removeEventListener('scroll', scrollHandler); // Store remover
+        descriptionEl.clearCustomScrollListener = () => descriptionEl.removeEventListener('scroll', scrollHandler);
         setTimeout(() => handleTextScroll(contentItem.id, descriptionEl), 0);
     } else {
         if (!contentItem.video_url || contentItem.video_url.trim() === '') {
@@ -307,9 +281,7 @@ async function updateAndPersistContentProgress(contentId, contentType, newPositi
                 body: JSON.stringify(payload)
             });
             const responseData = await response.json();
-            if (responseData.status === 0) {
-                // console.log('Progress persisted for content_id:', contentId, responseData.action);
-            } else {
+            if (responseData.status !== 0) {
                 console.error('Failed to persist progress for content_id:', contentId, responseData.message);
             }
         } catch (error) {
@@ -333,8 +305,6 @@ function markListItemAsCompletedVisuals(contentItemId, isCompleted, element = nu
     if (listItem) {
         if (isCompleted) {
             listItem.classList.add('content-item-completed');
-            // CSS: .content-item-completed { background-color: #e6ffed; border-left: 4px solid #28a745; opacity: 0.7; }
-            // CSS: .content-item-completed::after { content: ' ✔'; color: green; }
         } else {
             listItem.classList.remove('content-item-completed');
         }
@@ -344,29 +314,18 @@ function markListItemAsCompletedVisuals(contentItemId, isCompleted, element = nu
 function calculateOverallCourseProgress() {
     if (!allCourseContents || allCourseContents.length === 0) {
         if(courseProgressTextEl) courseProgressTextEl.textContent = 'Overall Progress: 0%';
-        checkAndDisplayCertificateButton(0); // Update certificate button status
-        return 0;
-    }
-
-    const totalTrackableItems = allCourseContents.length;
-    if (totalTrackableItems === 0) {
-        if(courseProgressTextEl) courseProgressTextEl.textContent = 'Overall Progress: 0%';
         checkAndDisplayCertificateButton(0);
         return 0;
     }
-
-    let completedItemsCount = 0;
-    allCourseContents.forEach(item => {
+    const completedItemsCount = allCourseContents.filter(item => {
         const progress = userCourseProgress[item.id];
-        if (progress && progress.completed) {
-            completedItemsCount++;
-        }
-    });
+        return progress && progress.completed;
+    }).length;
 
-    const overallProgressPercentage = (completedItemsCount / totalTrackableItems) * 100;
+    const overallProgressPercentage = (completedItemsCount / allCourseContents.length) * 100;
     if(courseProgressTextEl) courseProgressTextEl.textContent = `Overall Progress: ${overallProgressPercentage.toFixed(0)}%`;
 
-    checkAndDisplayCertificateButton(overallProgressPercentage); // Call here to update button status
+    checkAndDisplayCertificateButton(overallProgressPercentage);
     return overallProgressPercentage;
 }
 
@@ -379,29 +338,19 @@ function checkAndDisplayCertificateButton(overallPercentage) {
         const configureAndShow = () => {
             getCertificateBtnEl.href = `${APP_URL}student/generate_certificate.php?course_id=${COURSE_ID}&student_id=${USER_ID}`;
             const fee = parseFloat(courseDetails.certificate_fee);
-            if (fee > 0) {
-                certificateFeeDisplayEl.textContent = `(Fee: $${fee.toFixed(2)})`;
-            } else {
-                certificateFeeDisplayEl.textContent = '(Free)';
-            }
+            certificateFeeDisplayEl.textContent = fee > 0 ? `(Fee: $${fee.toFixed(2)})` : '(Free)';
             getCertificateBtnEl.classList.remove('disabled');
             certificateSectionEl.style.display = 'block';
         };
 
         if (currentCourseEnrollmentStatus !== 'Completed') {
-            course_completed()
-                .then(success => {
-                    if(success) {
-                        currentCourseEnrollmentStatus = 'Completed';
-                    } else {
-                        console.warn("Backend course completion update failed. Certificate generation might rely on backend check.");
-                    }
-                    configureAndShow();
-                })
-                .catch(error => {
-                     console.error("Error calling course_completed:", error);
-                     configureAndShow();
-                });
+            course_completed().then(success => {
+                if(success) currentCourseEnrollmentStatus = 'Completed';
+                configureAndShow();
+            }).catch(error => {
+                console.error("Error calling course_completed:", error);
+                configureAndShow();
+            });
         } else {
             configureAndShow();
         }
@@ -411,26 +360,9 @@ function checkAndDisplayCertificateButton(overallPercentage) {
     }
 }
 
-// Event Listeners for Prev/Next Chapter Buttons
-if(prevChapterBtnEl) {
-    prevChapterBtnEl.addEventListener('click', () => {
-      if (currentChapterIndex > 0) {
-        displayChapter(currentChapterIndex - 1);
-      }
-    });
-}
-if(nextChapterBtnEl) {
-    nextChapterBtnEl.addEventListener('click', () => {
-      if (currentChapterIndex < chapters.length - 1) {
-        displayChapter(currentChapterIndex + 1);
-      }
-    });
-}
-
-// Video Progress Handling Functions (Adapted)
 function handleVideoTimeUpdate() {
     const currentVideoData = JSON.parse(localStorage.getItem('currentVideo'));
-    if (!currentVideoData || !videoPlayerEl || !videoPlayerEl.duration || videoPlayerEl.duration === 0) return;
+    if (!currentVideoData || !videoPlayerEl || !videoPlayerEl.duration) return;
     updateAndPersistContentProgress(currentVideoData.videoId, 'video', videoPlayerEl.currentTime, false, videoPlayerEl.duration);
 }
 
@@ -440,138 +372,63 @@ function handleVideoEnded() {
     updateAndPersistContentProgress(currentVideoData.videoId, 'video', videoPlayerEl.duration, true, videoPlayerEl.duration);
 }
 
-// Q&A and Course Completion logic
-function loadQuestionAnswers(questionAnswersData) {
-    let qnaTargetContainer = document.querySelector('.col-lg-4 > .card > .card-body > h4')?.parentElement || document.querySelector('.col-lg-4 .mb-4');
-    if (!qnaTargetContainer && document.querySelector('.col-lg-4')) {
-         qnaTargetContainer = document.querySelector('.col-lg-4').firstElementChild?.querySelector('.card-body') || document.querySelector('.col-lg-4 > .mb-4');
-    }
-    if (!qnaTargetContainer) { console.warn("Q&A container could not be reliably found."); return; }
-
-    const qaListParentId = 'qa-list-dynamic-parent';
-    let qaListParent = qnaTargetContainer.querySelector(`#${qaListParentId}`);
-
-    if (!qaListParent) {
-        qnaTargetContainer.innerHTML = '';
-        const title = document.createElement('h4');
-        title.textContent = 'Questions and Answers';
-        qnaTargetContainer.appendChild(title);
-        qaListParent = document.createElement('div');
-        qaListParent.id = qaListParentId;
-        qnaTargetContainer.appendChild(qaListParent);
-    } else {
-         qaListParent.innerHTML = '';
-    }
-
-    if (questionAnswersData.length > 0) {
-      questionAnswersData.forEach((qa) => {
-        const card = document.createElement('div');
-        card.classList.add('card', 'mb-2');
-        const cardBody = document.createElement('div');
-        cardBody.classList.add('card-body', 'p-3');
-        const questionTitle = document.createElement('h6');
-        questionTitle.classList.add('card-title', 'mb-1');
-        questionTitle.textContent = qa.question;
-        const answerText = document.createElement('p');
-        answerText.classList.add('card-text', 'fs-6');
-        answerText.textContent = qa.answer || 'Awaiting answer...';
-        cardBody.appendChild(questionTitle);
-        cardBody.appendChild(answerText);
-        card.appendChild(cardBody);
-        qaListParent.appendChild(card);
-      });
-    } else {
-      qaListParent.innerHTML = '<p>No questions and answers found for the course.</p>';
-    }
-}
-
 async function course_completed() {
-  console.log(`Attempting to mark course ${COURSE_ID} as completed on backend.`);
-  const requestBody = {
-    courseId: COURSE_ID,
-    user_id: USER_ID,
-  };
-
-  try {
-    const response = await fetch(`${APP_URL}student/course-completion.php`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
-    if (!response.ok) {
-        console.error('Course completion API call failed with status:', response.status);
+    const requestBody = { courseId: COURSE_ID, user_id: USER_ID };
+    try {
+        const response = await fetch(`${APP_URL}student/course-completion.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+        });
+        if (!response.ok) {
+            console.error('Course completion API call failed with status:', response.status);
+            return false;
+        }
+        const responseData = await response.json();
+        return responseData.status === 0;
+    } catch (error) {
+        console.error('Network or other error in course_completed:', error);
         return false;
     }
-    const responseData = await response.json();
-
-    console.log('Course completion response:', responseData);
-    if (responseData.status === 0) {
-      currentCourseEnrollmentStatus = 'Completed';
-      return true;
-    }
-    return false;
-  } catch (error) {
-      console.error('Network or other error in course_completed:', error);
-      return false;
-  }
 }
 
-function checkCourseCompletion() {
-  calculateOverallCourseProgress();
-}
-
-showloader();
-getCourseContent()
-  .then(() => {
-    hideloader();
-  })
-  .catch((error) => {
-    console.error("Failed to initialize course content:", error);
-    hideloader();
-    if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>A critical error occurred while loading course data. Please try refreshing the page.</p>";
-  });
-
-// Event listener for submitQuestionBtn
-const submitQuestionBtn = document.getElementById('submitQuestionBtn');
-if (submitQuestionBtn) {
-    submitQuestionBtn.addEventListener('click', () => {
-      const questionTextarea = document.getElementById('questionTextarea');
-      if (!questionTextarea) return;
-      const question = questionTextarea.value.trim();
-      if (!question) {
+function submitQuestion() {
+    const questionTextarea = document.getElementById('questionTextarea');
+    const question = questionTextarea.value.trim();
+    if (!question) {
         swal('Empty Question', 'Please type your question before submitting.', 'warning');
         return;
-      }
-      const requestBody = {
-        courseId: COURSE_ID,
-        user_id: USER_ID,
-        question,
-      };
+    }
+    const requestBody = { courseId: COURSE_ID, user_id: USER_ID, question };
 
-      fetch(`${APP_URL}student/submit-question.php`, {
+    fetch(`${APP_URL}student/submit-question.php`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
-      })
-        .then((response) => response.json())
-        .then((responseData) => {
-          if (responseData.status === 0) {
-            swal(
-              'Success',
-              `Question submitted successfully: ${responseData.message}`,
-              'success'
-            );
+    })
+    .then((response) => response.json())
+    .then((responseData) => {
+        if (responseData.status === 0) {
+            swal('Success', 'Question submitted successfully. It will be reviewed by the instructor.', 'success');
             questionTextarea.value = '';
-          } else {
+            // Optionally, dynamically add the new question to the UI. For now, a refresh would show it.
+        } else {
             swal('Submission Error', `Failed to submit question: ${responseData.message}`, 'error');
-          }
-        })
-        .catch((error) => {
-          swal('Request Error', `Error submitting question: ${error}`, 'error');
-        });
+        }
+    })
+    .catch((error) => {
+        swal('Request Error', `Error submitting question: ${error}`, 'error');
     });
 }
+
+// --- Initializer ---
+document.addEventListener('DOMContentLoaded', () => {
+    showloader();
+    initializeCoursePage()
+      .then(() => hideloader())
+      .catch((error) => {
+        console.error("Failed to initialize course content page:", error);
+        hideloader();
+        if(contentItemsContainerEl) contentItemsContainerEl.innerHTML = "<p class='text-danger'>A critical error occurred while initializing the page.</p>";
+      });
+});
