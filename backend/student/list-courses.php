@@ -1,47 +1,43 @@
 <?php
 session_start();
-require_once '../assets/inject.php';
 require_once '../assets/connection.php';
 
-// Get the limit parameter from the URL
-$limit = isset($_GET['limit']) ? mysql_entities_fix_string($conn, $_GET['limit']) : 'all';
-$userId = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-
 $response = array();
+$userId = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : null;
 
 // Base query
 $query = "SELECT c.id, c.title, c.description, c.teacher_id, c.enrollment_fee, c.certificate_fee, t.username AS teacher_username";
+$params = array();
+$param_types = "";
 
-// If a user is logged in, join with student_courses to get their enrollment status
 if ($userId) {
     $query .= ", sc.completion_status AS enrollment_status ";
     $query .= " FROM courses c";
     $query .= " LEFT JOIN teachers t ON c.teacher_id = t.id";
-    $query .= " LEFT JOIN student_courses sc ON c.id = sc.course_id AND sc.student_id = " . intval($userId);
+    $query .= " LEFT JOIN student_courses sc ON c.id = sc.course_id AND sc.student_id = ?";
+    $params[] = $userId;
+    $param_types .= "i";
 } else {
     $query .= " FROM courses c";
     $query .= " LEFT JOIN teachers t ON c.teacher_id = t.id";
 }
 
-// Check if a specific limit is provided
-if ($limit !== 'all' && is_numeric($limit)) {
-    $query .= " LIMIT " . intval($limit);
+// Prepare and execute the statement
+$stmt = $conn->prepare($query);
+if ($userId) {
+    $stmt->bind_param($param_types, ...$params);
 }
+$stmt->execute();
+$result = $stmt->get_result();
 
-// Retrieve courses from the database
-$result = mysqli_query($conn, $query) or die(json_encode(array('status' => 1, 'message' => 'Error occurred during retrieval of courses.')));
-
-// Check if there are any courses
-if (mysqli_num_rows($result) > 0) {
+if ($result->num_rows > 0) {
     $response['status'] = 0;
     $response['courses'] = array();
-    // Loop through each row and display course information
-    while ($row = mysqli_fetch_assoc($result)) {
-        $enrollment_status = 'Not Enrolled'; // Default status
+    while ($row = $result->fetch_assoc()) {
+        $enrollment_status = 'Not Enrolled';
         if ($userId && !empty($row['enrollment_status'])) {
             $enrollment_status = $row['enrollment_status'];
         }
-
         $response['courses'][] = array(
             'id' => $row['id'],
             'title' => $row['title'],
@@ -57,9 +53,8 @@ if (mysqli_num_rows($result) > 0) {
     $response['message'] = 'No Courses Found';
 }
 
-// Return JSON response
+$stmt->close();
 header('Content-Type: application/json');
 echo json_encode($response);
-// Close the database connection
-mysqli_close($conn);
+$conn->close();
 ?>

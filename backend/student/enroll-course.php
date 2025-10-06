@@ -1,12 +1,8 @@
 <?php
-require_once '../assets/inject.php';
+session_start();
 require_once '../assets/connection.php';
-// Initialize variables
+
 $response = array();
-$courseId = null;
-$userId = null;
-$enrollment_fee = 0.00;
-$wallet_balance = 0.00;
 
 // Retrieve the JSON payload
 $json = file_get_contents('php://input');
@@ -14,129 +10,117 @@ $obj = json_decode($json, true);
 
 if (!$obj || !isset($obj['courseId']) || !isset($obj['userId'])) {
     $response = array('status' => 1, 'message' => 'Invalid request. Course ID and User ID are required.');
+    echo json_encode($response);
+    exit();
+}
+
+$courseId = $obj['courseId'];
+$userId = $obj['userId'];
+
+if (empty($courseId) || empty($userId)) {
+    $response = array('status' => 1, 'message' => 'Course ID and User ID cannot be empty.');
+    echo json_encode($response);
+    exit();
+}
+
+// Fetch Course Details (Enrollment Fee and Teacher ID)
+$stmt = $conn->prepare("SELECT enrollment_fee, teacher_id FROM courses WHERE id = ?");
+$stmt->bind_param("i", $courseId);
+$stmt->execute();
+$result_course_details = $stmt->get_result();
+
+if ($result_course_details->num_rows == 0) {
+    $response = array('status' => 1, 'message' => 'Course not found.');
 } else {
-    $courseId = mysql_entities_fix_string($conn, $obj['courseId']);
-    $userId = mysql_entities_fix_string($conn, $obj['userId']);
+    $course_data = $result_course_details->fetch_assoc();
+    $enrollment_fee = floatval($course_data['enrollment_fee']);
+    $teacher_id = $course_data['teacher_id'];
 
-    if (empty($courseId) || empty($userId)) {
-        $response = array('status' => 1, 'message' => 'Course ID and User ID cannot be empty.');
+    // Fetch Student Details (Wallet Balance)
+    $stmt = $conn->prepare("SELECT wallet_balance FROM users WHERE id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result_user_details = $stmt->get_result();
+
+    if ($result_user_details->num_rows == 0) {
+        $response = array('status' => 1, 'message' => 'User not found.');
     } else {
-        // Fetch Course Details (Enrollment Fee and Teacher ID)
-        $query_course_details = "SELECT enrollment_fee, teacher_id FROM courses WHERE id = '$courseId'";
-        $result_course_details = mysqli_query($conn, $query_course_details);
+        $user_data = $result_user_details->fetch_assoc();
+        $wallet_balance = floatval($user_data['wallet_balance']);
 
-        if (!$result_course_details || mysqli_num_rows($result_course_details) == 0) {
-            $response = array('status' => 1, 'message' => 'Course not found.');
+        // Check if the user is already enrolled
+        $stmt = $conn->prepare("SELECT id FROM student_courses WHERE course_id = ? AND student_id = ?");
+        $stmt->bind_param("ii", $courseId, $userId);
+        $stmt->execute();
+        $result_check_enrollment = $stmt->get_result();
+
+        if ($result_check_enrollment->num_rows > 0) {
+            $response = array('status' => 1, 'message' => 'You are already enrolled in this course.');
         } else {
-            $course_data = mysqli_fetch_assoc($result_course_details);
-            $enrollment_fee = floatval($course_data['enrollment_fee']);
-
-            // Fetch Student Details (Wallet Balance)
-            $query_user_details = "SELECT wallet_balance FROM users WHERE id = '$userId'";
-            $result_user_details = mysqli_query($conn, $query_user_details);
-
-            if (!$result_user_details || mysqli_num_rows($result_user_details) == 0) {
-                $response = array('status' => 1, 'message' => 'User not found.');
-            } else {
-                $user_data = mysqli_fetch_assoc($result_user_details);
-                $wallet_balance = floatval($user_data['wallet_balance']);
-
-                // Check if the user is already enrolled in the course
-                $query_check_enrollment = "SELECT * FROM student_courses WHERE course_id = '$courseId' AND student_id = '$userId'";
-                $result_check_enrollment = mysqli_query($conn, $query_check_enrollment);
-
-                if ($result_check_enrollment && mysqli_num_rows($result_check_enrollment) > 0) {
-                    $response = array('status' => 1, 'message' => 'You are already enrolled in this course.');
-                } else if (!$result_check_enrollment) {
-                     $response = array('status' => 1, 'message' => 'Error checking enrollment status: ' . mysqli_error($conn));
+            // Proceed with enrollment
+            if ($enrollment_fee > 0) {
+                if ($wallet_balance < $enrollment_fee) {
+                    $response = array('status' => 1, 'message' => 'Insufficient funds. Please top up your wallet.');
                 } else {
-                    // User is not enrolled, proceed with enrollment logic
-                    if ($enrollment_fee > 0) {
-                        if ($wallet_balance < $enrollment_fee) {
-                            $response = array('status' => 1, 'message' => 'Insufficient funds to enroll in this course. Please top up your wallet.');
-                        } else {
-                            // Sufficient funds, proceed with transaction
-                            mysqli_autocommit($conn, FALSE); // Start transaction
+                    // Start transaction
+                    $conn->autocommit(FALSE);
 
-                            $all_queries_success = true;
+                    // 1. Deduct fee from student
+                    $new_student_balance = $wallet_balance - $enrollment_fee;
+                    $stmt1 = $conn->prepare("UPDATE users SET wallet_balance = ? WHERE id = ?");
+                    $stmt1->bind_param("di", $new_student_balance, $userId);
+                    $success1 = $stmt1->execute();
 
-                            // 1. Deduct fee from student's wallet
-                            $new_student_balance = $wallet_balance - $enrollment_fee;
-                            $update_student_wallet_query = "UPDATE users SET wallet_balance = $new_student_balance WHERE id = '$userId'";
-                            if (!mysqli_query($conn, $update_student_wallet_query) || mysqli_affected_rows($conn) == 0) {
-                                $all_queries_success = false;
-                            }
+                    // 2. Enroll student
+                    $stmt2 = $conn->prepare("INSERT INTO student_courses (course_id, student_id, completion_status, start_date) VALUES (?, ?, 'In Progress', NOW())");
+                    $stmt2->bind_param("ii", $courseId, $userId);
+                    $success2 = $stmt2->execute();
 
-                            // 2. Enroll student in the course
-                            if ($all_queries_success) {
-                                $enroll_query = "INSERT INTO student_courses (course_id, student_id, completion_status, start_date) VALUES ('$courseId', '$userId', 'In Progress', NOW())";
-                                if (!mysqli_query($conn, $enroll_query)) {
-                                    $all_queries_success = false;
-                                }
-                            }
+                    // 3. Get teacher details
+                    $stmt3 = $conn->prepare("SELECT wallet_balance, revenue_percentage FROM teachers WHERE id = ?");
+                    $stmt3->bind_param("i", $teacher_id);
+                    $stmt3->execute();
+                    $teacher_result = $stmt3->get_result();
+                    $teacher_data = $teacher_result->fetch_assoc();
 
-                            // 3. Calculate and distribute teacher's revenue
-                            if ($all_queries_success) {
-                                $teacher_id = $course_data['teacher_id'];
-                                $query_teacher_details = "SELECT wallet_balance, revenue_percentage FROM teachers WHERE id = '$teacher_id'";
-                                $result_teacher_details = mysqli_query($conn, $query_teacher_details);
+                    $teacher_revenue = $enrollment_fee * (floatval($teacher_data['revenue_percentage']) / 100);
+                    $new_teacher_balance = floatval($teacher_data['wallet_balance']) + $teacher_revenue;
 
-                                if ($result_teacher_details && mysqli_num_rows($result_teacher_details) > 0) {
-                                    $teacher_data = mysqli_fetch_assoc($result_teacher_details);
-                                    $teacher_revenue_percentage = floatval($teacher_data['revenue_percentage']);
-                                    $teacher_current_wallet = floatval($teacher_data['wallet_balance']);
-                                    $teacher_revenue = $enrollment_fee * ($teacher_revenue_percentage / 100);
-                                    $new_teacher_balance = $teacher_current_wallet + $teacher_revenue;
+                    // 4. Update teacher's wallet
+                    $stmt4 = $conn->prepare("UPDATE teachers SET wallet_balance = ? WHERE id = ?");
+                    $stmt4->bind_param("di", $new_teacher_balance, $teacher_id);
+                    $success4 = $stmt4->execute();
 
-                                    // Update teacher's wallet
-                                    $update_teacher_wallet_query = "UPDATE teachers SET wallet_balance = $new_teacher_balance WHERE id = '$teacher_id'";
-                                    if (!mysqli_query($conn, $update_teacher_wallet_query) || mysqli_affected_rows($conn) == 0) {
-                                        $all_queries_success = false;
-                                    }
+                    // 5. Record transaction
+                    $stmt5 = $conn->prepare("INSERT INTO transactions (student_id, course_id, teacher_id, amount, teacher_revenue, transaction_type) VALUES (?, ?, ?, ?, ?, 'enrollment')");
+                    $stmt5->bind_param("iiidd", $userId, $courseId, $teacher_id, $enrollment_fee, $teacher_revenue);
+                    $success5 = $stmt5->execute();
 
-                                    // 4. Record the transaction
-                                    if ($all_queries_success) {
-                                        $transaction_query = "INSERT INTO transactions (student_id, course_id, teacher_id, amount, teacher_revenue, transaction_type) VALUES ('$userId', '$courseId', '$teacher_id', '$enrollment_fee', '$teacher_revenue', 'enrollment')";
-                                        if (!mysqli_query($conn, $transaction_query)) {
-                                            $all_queries_success = false;
-                                        }
-                                    }
-                                } else {
-                                    $all_queries_success = false; // Teacher not found
-                                }
-                            }
-
-                            // 5. Commit or rollback the transaction
-                            if ($all_queries_success) {
-                                mysqli_commit($conn);
-                                $response = array('status' => 0, 'message' => 'Course enrollment successful. Fee deducted and teacher revenue shared.');
-                            } else {
-                                mysqli_rollback($conn);
-                                $response = array('status' => 1, 'message' => 'Course enrollment failed during transaction. Please try again. DB Error: ' . mysqli_error($conn));
-                            }
-                            mysqli_autocommit($conn, TRUE);
-                        }
+                    if ($success1 && $success2 && $teacher_result->num_rows > 0 && $success4 && $success5) {
+                        $conn->commit();
+                        $response = array('status' => 0, 'message' => 'Enrollment successful. Fee deducted and teacher revenue shared.');
                     } else {
-                        // Free course, enroll directly
-                        $enroll_query = "INSERT INTO student_courses (course_id, student_id, completion_status, start_date) VALUES ('$courseId', '$userId', 'In Progress', NOW())";
-                        $enroll_result = mysqli_query($conn, $enroll_query);
-
-                        if ($enroll_result) {
-                            $response = array('status' => 0, 'message' => 'Course enrollment successful.');
-                        } else {
-                            $response = array('status' => 1, 'message' => 'Course enrollment failed: ' . mysqli_error($conn));
-                        }
+                        $conn->rollback();
+                        $response = array('status' => 1, 'message' => 'Enrollment failed during transaction. Please try again.');
                     }
+                    $conn->autocommit(TRUE);
+                }
+            } else {
+                // Free course
+                $stmt = $conn->prepare("INSERT INTO student_courses (course_id, student_id, completion_status, start_date) VALUES (?, ?, 'In Progress', NOW())");
+                $stmt->bind_param("ii", $courseId, $userId);
+                if ($stmt->execute()) {
+                    $response = array('status' => 0, 'message' => 'Successfully enrolled in free course.');
+                } else {
+                    $response = array('status' => 1, 'message' => 'Enrollment failed for free course.');
                 }
             }
         }
     }
 }
 
-// Return JSON response
+$stmt->close();
 header('Content-Type: application/json');
 echo json_encode($response);
-
-// Close the database connection
-mysqli_close($conn);
+$conn->close();
 ?>

@@ -3,10 +3,34 @@ let user = sessionStorage.getItem('user');
 user = JSON.parse(user);
 console.log(user);
 
-$(document).ready(function () {
-    if (user && typeof user.wallet_balance !== 'undefined') {
-        $('#walletBalance').text(`$${parseFloat(user.wallet_balance).toFixed(2)}`);
+async function fetchTeacherProfile() {
+    if (!user || !user.id) {
+        console.error('Teacher ID not found for fetching profile.');
+        return;
     }
+    try {
+        const response = await fetch(`${url}teacher/get-teacher.php?id=${user.id}`);
+        if (!response.ok) {
+            console.error(`HTTP error! status: ${response.status}`);
+            return;
+        }
+        const resData = await response.json();
+        if (resData.status === 0 && resData.teacher) {
+            const walletBalanceDisplayEl = document.getElementById('walletBalance');
+            if (walletBalanceDisplayEl) {
+                const wallet_balance = parseFloat(resData.teacher.wallet_balance);
+                walletBalanceDisplayEl.textContent = '$' + (isNaN(wallet_balance) ? '0.00' : wallet_balance.toFixed(2));
+            }
+        } else {
+            console.error('Failed to fetch teacher profile:', resData.message);
+        }
+    } catch (error) {
+        console.error('Error fetching teacher profile:', error);
+    }
+}
+
+$(document).ready(function () {
+    fetchTeacherProfile(); // Fetch the latest profile data, including wallet balance
     fetchCourses();
     $('input[name="videoType"]').change(function () {
         let videoType = $(this).val();
@@ -29,15 +53,12 @@ $(document).ready(function () {
            
         };
       createCourse(data);
-
-  
-
     });
+
     $('#uploadVideo').click(function (e) {
         e.preventDefault();
         uploadContent();
-    }
-    );
+    });
 
     // Add event listener for the Withdraw button
     $(document).on('click', '#withdraw-btn', function() {
@@ -103,16 +124,12 @@ async function fetchCourses(){
            
              <a href="deleteCourse()" class="btn">Delete</a></td>
             </tr>`
-        )
+            )
         });
         $('#blue').append(`</tbody></table>`);
-
-
     }else{
         swal('Oops', resData.message, 'error');
     }
-    
-      
     hideloader();
 }
 
@@ -123,37 +140,28 @@ async function uploadContent(){
         title: $('#contentTitle').val(),
         content: $('#contentDescription').val(),
         video_type: $('input[name="videoType"]:checked').val(),
-        
-
+    }
+    if($('input[name="videoType"]:checked').val() === 'file'){
+        const formData = new FormData();
+        formData.append('video', $('#video').prop('files')[0]);
+        Object.entries(data).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
+        postData = formData;
+    }else{
+        data.url = $('#url').val();
+        postData = JSON.stringify(data);
+    }
+    const response = await fetch(`${url}teacher/upload-course-content.php`, {
+        method: 'POST',
+        body: postData,
+    });
+    const resData = await response.json();
+    console.log(resData);
+    if (resData.status == 0) {
+        swal('Success', resData.message, 'success');
+    }else{
+        swal('Oops', resData.message, 'error');
+    }
+    hideloader();
 }
-if($('input[name="videoType"]:checked').val() === 'file'){
-const formData = new FormData();
-
-  formData.append('video', $('#video').prop('files')[0]);
-  Object.entries(data).forEach(([key, value]) => {
-    formData.append(key, value);
-  });
-    postData = formData;
-}else{
-    data.url = $('#url').val();
-    postData = JSON.stringify(data);
-
-}
-const response = await fetch(`${url}teacher/upload-course-content.php`, {
-    method: 'POST',
-    body: postData,
-});
-const resData = await response.json();
-console.log(resData);
-if (resData.status == 0) {
-    swal('Success', resData.message, 'success');
-}else{
-    swal('Oops', resData.message, 'error');
-}
-hideloader();
-}
-
-
-//
-
-
