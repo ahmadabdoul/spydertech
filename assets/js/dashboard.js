@@ -366,3 +366,13 @@ async function listActiveCourse() {
 
 fetchUserProfile(); // Call to fetch wallet balance
 listActiveCourse(); // Call to list enrolled courses with certificate links
+
+// Add event listener for the Top Up button
+$(document).on('click', '#top-up-btn', function() {
+    swal({
+        title: 'Top Up Wallet',
+        text: 'Payment gateway integration is not yet available. This is a placeholder.',
+        icon: 'info',
+        button: 'OK',
+    });
+});

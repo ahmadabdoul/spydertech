@@ -3,6 +3,7 @@ const url = localStorage.getItem('url');
 async function listCourses() {
   try {
     showloader();
+    // The backend now uses the session to get the userId, so no need to pass it in the URL
     const response = await fetch(`${url}student/list-courses.php?limit=4`);
     const resData = await response.json();
     hideloader();
@@ -14,15 +15,12 @@ async function listCourses() {
 
     const courses = resData.courses;
 
-    // Create the table element
     const table = document.createElement('table');
     table.id = 'coursesTable';
     table.className = 'table table-striped';
 
-    // Create the table header
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    // Define the table header column names
     const headers = [
       'ID',
       'Title',
@@ -42,14 +40,14 @@ async function listCourses() {
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    // Create the table body
     const tbody = document.createElement('tbody');
 
     courses.forEach((course) => {
-      const { id, title, description, teacher_username, enrollment_fee, certificate_fee } = course;
+      const { id, title, description, teacher_username, enrollment_fee, certificate_fee, enrollment_status } = course;
 
       const row = document.createElement('tr');
 
+      // Create cells
       row.innerHTML = `
         <td>${id}</td>
         <td>${title}</td>
@@ -57,28 +55,46 @@ async function listCourses() {
         <td>${teacher_username}</td>
         <td>${parseFloat(enrollment_fee) > 0 ? '$' + parseFloat(enrollment_fee).toFixed(2) : 'Free'}</td>
         <td>${parseFloat(certificate_fee) > 0 ? '$' + parseFloat(certificate_fee).toFixed(2) : 'Free'}</td>
-        <td><button class="btn btn-primary enroll-btn" data-course-id="${id}">Enroll</button></td>
       `;
 
+      // Create the actions cell with the dynamic button
+      const actionsCell = document.createElement('td');
+      const actionButton = document.createElement('button');
+      actionButton.classList.add('btn');
+      actionButton.setAttribute('data-course-id', id);
+
+      switch (enrollment_status) {
+          case 'In Progress':
+              actionButton.textContent = 'Enrolled';
+              actionButton.classList.add('btn-success');
+              actionButton.disabled = true;
+              break;
+          case 'Completed':
+              actionButton.textContent = 'Completed';
+              actionButton.classList.add('btn-info');
+              actionButton.disabled = true;
+              break;
+          default: // Not Enrolled
+              actionButton.textContent = 'Enroll';
+              actionButton.classList.add('btn-primary', 'enroll-btn');
+              actionButton.addEventListener('click', function() {
+                  enrollCourse(this.getAttribute('data-course-id'));
+              });
+              break;
+      }
+
+      actionsCell.appendChild(actionButton);
+      row.appendChild(actionsCell);
       tbody.appendChild(row);
     });
 
     table.appendChild(tbody);
 
-    // Append the table to the desired element in your HTML file
     const tableContainer = document.getElementById('tableContainer');
     tableContainer.innerHTML = ''; // Clear previous content
     tableContainer.appendChild(table);
 
-    // Add event listeners to the new buttons
-    document.querySelectorAll('.enroll-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const courseId = this.getAttribute('data-course-id');
-            enrollCourse(courseId);
-        });
-    });
-
-    // Initialize DataTables without jQuery
+    // Initialize DataTables
     new simpleDatatables.DataTable(table);
 
   } catch (error) {
@@ -101,9 +117,9 @@ async function enrollCourse(courseId) {
       icon: 'error',
       button: 'Go to Login',
     }).then(() => {
-      window.location.href = '../authentication-login.html'; // Redirect to login page
+      window.location.href = '../authentication-login.html';
     });
-    return; // Stop execution
+    return;
   }
 
   try {
@@ -140,6 +156,16 @@ async function enrollCourse(courseId) {
     hideloader();
     if (resData.status === 0) {
       swal('Success', resData.message, 'success');
+
+      // Update the button state in real-time
+      const enrolledButton = document.querySelector(`.enroll-btn[data-course-id="${courseId}"]`);
+      if (enrolledButton) {
+          enrolledButton.textContent = 'Enrolled';
+          enrolledButton.disabled = true;
+          enrolledButton.classList.remove('btn-primary', 'enroll-btn');
+          enrolledButton.classList.add('btn-success');
+      }
+
     } else {
       swal('Error', resData.message, 'error');
     }

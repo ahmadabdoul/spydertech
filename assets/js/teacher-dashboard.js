@@ -39,6 +39,15 @@ $(document).ready(function () {
     }
     );
 
+    // Add event listener for the Withdraw button
+    $(document).on('click', '#withdraw-btn', function() {
+        swal({
+            title: 'Withdraw Funds',
+            text: 'Withdrawal system integration is not yet available. This is a placeholder.',
+            icon: 'info',
+            button: 'OK',
+        });
+    });
 });
 
 async function createCourse(data) {
