@@ -1,5 +1,5 @@
 <?php
-require_once '../assets/connection.php';
+require_once '../backend/assets/connection.php';
 
 // --- Initial Setup ---
 $course_details = null;
